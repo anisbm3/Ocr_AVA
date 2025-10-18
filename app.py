@@ -3,12 +3,38 @@ import json
 import dotenv
 import gradio as gr
 from google import genai
+
 dotenv.load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 with open("./cv_template_camelCase.json", "r") as f:
-    CV_TEMPLATE = f.read() # read as text and not json to pass to the model
+    CV_TEMPLATE = f.read()  # read as text and not json to pass to the model
+
+
+experiences = """
+[
+    {
+        "jobTitle": "Emergency Medical Technician (EMT)",
+        "company": "Gospa Odv",
+        "location": "",
+        "startDate": "01/2025",
+        "endDate": "Current",
+        "description": "• Provided Basic Life Support (BLS) including CPR and AED. • Stabilized patients during critical incidents for transport. • Transported patients safely to medical facilities.",
+        "tags": [""],
+    },
+    {
+        "jobTitle": "Volunteer Firefighter",
+        "company": "Gospa Odv",
+        "location": "",
+        "startDate": "01/2025",
+        "endDate": "Current",
+        "description": "• Responded to fire emergencies and assisted in fire suppression efforts. • Conducted search and rescue operations in hazardous environments. • Participated in community fire safety education programs.",
+        "tags": ["firefighter", "emergency response"],
+    },
+]
+"""
+
 
 def resume_to_json(filepath):
     uploaded_file = client.files.upload(file=filepath)
@@ -30,7 +56,7 @@ def resume_to_json(filepath):
             Do not include any additional text before or after the JSON object.
             """,
             uploaded_file,
-        ]
+        ],
     )
     text_output = response.text
     # locate the first "{" and the last "}"
@@ -39,8 +65,37 @@ def resume_to_json(filepath):
     return json.loads(text_output[json_start:json_end])
 
 
-def hello(name):
-    return f"Hello {name}!"
+
+def judge_experience(experience):
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[
+            f"""
+You are an expert career advisor. Evaluate the following work experience for two criteria:
+1. Does it follow the format "achieved X by Y", where X is a quantifiable result and Y is the action taken? If yes, respond with "Respected". If not, suggest a revised version that fits this format.
+2. Does it use weak action verbs (e.g., "assisted", "helped", "participated")? If so, suggest stronger alternatives.
+
+Return your output in the following JSON format (no extra text):
+[
+{{
+    "xyz_format": "Respected" | "Unrespected",
+    "weak_verbs": "Weak" | "Strong",
+    "suggested_modification": "..."
+}}
+]
+Example experience:
+"Increased patient transport efficiency by 20% by optimizing ambulance routes."
+
+Here is the experience to evaluate:
+{experience}
+"""
+        ],
+    )
+    text_output =  response.text
+    json_start = text_output.find("[")
+    json_end = text_output.rfind("]") + 1
+    return json.loads(text_output[json_start:json_end])
+
 
 resume_to_json_extractor = gr.Interface(
     fn=resume_to_json,
@@ -50,17 +105,17 @@ resume_to_json_extractor = gr.Interface(
     api_name="resume_to_json_extractor",
 )
 
-hello_interface = gr.Interface(
-    fn=hello,
-    inputs="text",
-    outputs="text",
-    title="Hello Interface",
-    api_name="hello_interface",
+Experience_judge = gr.Interface(
+    fn=judge_experience,
+    inputs=gr.Textbox(lines=10),
+    outputs="json",
+    title="Experience Judge",
+    api_name="Experience_judge",
+    examples=[experiences],
 )
 
 demo = gr.TabbedInterface(
-    [resume_to_json_extractor, hello_interface],
-    ["Resume to JSON", "Hello"]
+    [resume_to_json_extractor, Experience_judge], ["Resume to JSON", "Experience Judge"]
 )
 
 demo.launch()
