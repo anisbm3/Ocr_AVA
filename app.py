@@ -20,7 +20,7 @@ experiences = """
         "location": "",
         "startDate": "01/2025",
         "endDate": "Current",
-        "description": "• Provided Basic Life Support (BLS) including CPR and AED. • Stabilized patients during critical incidents for transport. • Transported patients safely to medical facilities.",
+        "description": ["Provided Basic Life Support (BLS) including CPR and AED.", "Stabilized patients during critical incidents for transport.", "Transported patients safely to medical facilities."],
         "tags": [""],
     },
     {
@@ -29,7 +29,7 @@ experiences = """
         "location": "",
         "startDate": "01/2025",
         "endDate": "Current",
-        "description": "• Responded to fire emergencies and assisted in fire suppression efforts. • Conducted search and rescue operations in hazardous environments. • Participated in community fire safety education programs.",
+        "description": ["Responded to fire emergencies and assisted in fire suppression efforts.", "Conducted search and rescue operations in hazardous environments.", "Participated in community fire safety education programs."],
         "tags": ["firefighter", "emergency response"],
     },
 ]
@@ -65,23 +65,22 @@ def resume_to_json(filepath):
     return json.loads(text_output[json_start:json_end])
 
 
-
 def judge_experience(experience):
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=[
             f"""
-You are an expert career advisor. Evaluate the following work experience for two criteria:
+You are an expert career advisor. Evaluate each description field of the following work experience for two criteria:
 1. Does it follow the format "achieved X by Y", where X is a quantifiable result and Y is the action taken? If yes, respond with "Respected". If not, suggest a revised version that fits this format.
 2. Does it use weak action verbs (e.g., "assisted", "helped", "participated")? If so, suggest stronger alternatives.
 
 Return your output in the following JSON format (no extra text):
 [
-{{
-    "xyz_format": "Respected" | "Unrespected",
-    "weak_verbs": "Weak" | "Strong",
-    "suggested_modification": "..."
-}}
+    {{
+        "xyz_format": "Respected" | "Unrespected",
+        "weak_verbs": "Weak" | "Strong",
+        "suggested_modification": "..."
+    }}
 ]
 Example experience:
 "Increased patient transport efficiency by 20% by optimizing ambulance routes."
@@ -91,7 +90,7 @@ Here is the experience to evaluate:
 """
         ],
     )
-    text_output =  response.text
+    text_output = response.text
     json_start = text_output.find("[")
     json_end = text_output.rfind("]") + 1
     return json.loads(text_output[json_start:json_end])
@@ -115,7 +114,8 @@ Experience_judge = gr.Interface(
 )
 
 demo = gr.TabbedInterface(
-    [resume_to_json_extractor, Experience_judge], ["Resume to JSON", "Experience Judge"]
+    [resume_to_json_extractor, Experience_judge], [
+        "Resume to JSON", "Experience Judge"]
 )
 
 demo.launch()
