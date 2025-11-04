@@ -1,5 +1,7 @@
 ﻿# Gradio Interface
 gradio==4.44.0
+google-genai
+python-dotenv
 
 # AI Vision (Qwen Vision Agent)
 openai==1.54.3
