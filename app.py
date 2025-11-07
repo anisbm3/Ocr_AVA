@@ -21,7 +21,6 @@ except:
 with open("./cv_template_camelCase.json", "r") as f:
     CV_TEMPLATE = f.read()  # read as text and not json to pass to the model
 
-# jobs_descriptions = json.load(open("./job_descriptions.json", "r"))
 with open("./job_descriptions.json", "r") as f:
     JOB_DESCRIPTIONS = json.load(f)
 job_descriptions = [json.dumps(job, indent=2) for job in JOB_DESCRIPTIONS]
@@ -116,9 +115,9 @@ Here is the experience to evaluate:
 def add_new_job_to_db(job_data: str):
     # create unique job id
     job_id = str(uuid4())
-    # Parse json
+    # parse json
     job = json.loads(job_data)
-    # Add job to database (simulated)
+    # add job to database (simulated)
     collection.add(
         ids=[job_id],
         documents=[job_data],
