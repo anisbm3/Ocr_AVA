@@ -2,6 +2,8 @@
 gradio==4.44.0
 google-genai
 python-dotenv
+chromadb
+rfc3987
 
 # AI Vision (Qwen Vision Agent)
 openai==1.54.3
