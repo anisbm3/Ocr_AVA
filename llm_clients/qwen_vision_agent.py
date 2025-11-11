@@ -1,5 +1,5 @@
 """
-Qwen2.5-VL-7B-Instruct Vision Agent using LM Studio
+Qwen3VL-4B Vision Agent using LM Studio
 Replaces OCR functionality with advanced vision-language model
 """
 import os
@@ -11,25 +11,36 @@ import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
-import cv2
-import numpy as np
-from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+# Optional imports for image processing
+try:
+    import cv2
+    import numpy as np
+    from PIL import Image
+    CV2_AVAILABLE = True
+except ImportError:
+    cv2 = None
+    np = None
+    Image = None
+    CV2_AVAILABLE = False
+    logger.warning("⚠️ OpenCV/Pillow not available - some image processing features disabled")
 
 
 class QwenVisionAgent:
     """
-    Vision Agent using Qwen2.5-VL-7B-Instruct via LM Studio
+    Vision Agent using Qwen3VL-4B via LM Studio
     Replaces traditional OCR with vision-language model capabilities
     """
 
-    def __init__(self, lm_studio_host: str = "http://localhost:1234"):
+    def __init__(self, lm_studio_host: str = "http://0.0.0.0:1234"):
         self.lm_studio_host = lm_studio_host
         self.api_url = f"{lm_studio_host}/v1/chat/completions"
-        self.model_name = "qwen2.5-vl-7b-instruct"  # Adjust based on your LM Studio model name
+        self.model_name = "qwen2.5-vl-7b"  # Use Qwen2.5-VL-7B model
+        self.available_models = []
 
-        # Check connection
+        # Check connection and get available models
         self.is_connected = self.check_connection()
 
     def check_connection(self) -> bool:
@@ -37,15 +48,22 @@ class QwenVisionAgent:
         try:
             response = requests.get(f"{self.lm_studio_host}/v1/models", timeout=5)
             if response.status_code == 200:
-                models = response.json()
-                logger.info(f"✓ LM Studio connected. Available models: {models.get('data', [])}")
+                models_data = response.json()
+                self.available_models = [m.get('id', '') for m in models_data.get('data', [])]
+                logger.info(f"✓ LM Studio connected. Available models: {self.available_models}")
+                
+                # Update model_name if qwen2.5-vl-7b is not available but others are
+                if "qwen2.5-vl-7b" not in self.available_models and self.available_models:
+                    self.model_name = self.available_models[0]
+                    logger.info(f"Using available model: {self.model_name}")
+                
                 return True
             else:
                 logger.warning(f"⚠ LM Studio returned status code: {response.status_code}")
                 return False
         except requests.exceptions.RequestException as e:
             logger.error(f"❌ Cannot connect to LM Studio at {self.lm_studio_host}: {e}")
-            logger.info("Make sure LM Studio is running with Qwen2.5-VL-7B-Instruct loaded")
+            logger.info("Make sure LM Studio is running with Qwen2.5-VL-7B loaded")
             return False
 
     def encode_image_to_base64(self, image_path: str) -> Optional[str]:
@@ -66,7 +84,7 @@ class QwenVisionAgent:
         temperature: float = 0.1
     ) -> Dict[str, Any]:
         """
-        Analyze image using Qwen2.5-VL through LM Studio API
+        Analyze image using Qwen3VL-4B through LM Studio API
 
         Args:
             image_path: Path to image file
@@ -135,8 +153,8 @@ class QwenVisionAgent:
 
             return {
                 "text": extracted_text,
-                "confidence": 0.95,  # Qwen2.5-VL is highly accurate
-                "method": "qwen2.5-vl",
+                "confidence": 0.95,  # Qwen3VL-4B is highly accurate
+                "method": "qwen3vl-4b",
                 "model": self.model_name,
                 "timestamp": datetime.utcnow().isoformat()
             }
@@ -211,7 +229,7 @@ class QwenVisionAgent:
 
     def extract_cv_data(self, image_path: str) -> Dict[str, Any]:
         """
-        Extract structured CV data from image using Qwen2.5-VL
+        Extract structured CV data from image using Qwen3VL-4B
 
         Args:
             image_path: Path to CV image
@@ -268,7 +286,7 @@ Please provide the information in a clear, structured format. If any information
         Parse extracted CV text into structured format
 
         Args:
-            text: Raw text from Qwen2.5-VL
+            text: Raw text from Qwen3VL-4B
 
         Returns:
             Structured dictionary
@@ -296,7 +314,7 @@ Please provide the information in a clear, structured format. If any information
         if phones:
             structured["phone"] = phones[0]
 
-        # The rest can be extracted by Qwen2.5-VL's structured output
+        # The rest can be extracted by Qwen3VL-4B's structured output
         # Since Qwen is good at following instructions, it will provide structured data
 
         return structured
@@ -307,7 +325,7 @@ Please provide the information in a clear, structured format. If any information
         prompt: str = "Describe what you see in this video frame. Focus on the person's appearance, emotions, setting, and any text visible."
     ) -> Dict[str, Any]:
         """
-        Analyze video frame using Qwen2.5-VL
+        Analyze video frame using Qwen3VL-4B
 
         Args:
             frame_path: Path to video frame image
@@ -344,18 +362,18 @@ Please provide the information in a clear, structured format. If any information
         return self.analyze_image(page_image_path, prompt, max_tokens=2048, temperature=0.1)
 
 
-# Enhanced OCR Processor that uses Qwen2.5-VL
+# Enhanced OCR Processor that uses Qwen3VL-4B
 class EnhancedOCRProcessor:
     """
-    Enhanced OCR processor that primarily uses Qwen2.5-VL
+    Enhanced OCR processor that primarily uses Qwen3VL-4B
     Falls back to traditional OCR if needed
     """
 
-    def __init__(self, lm_studio_host: str = "http://localhost:1234"):
+    def __init__(self, lm_studio_host: str = "http://0.0.0.0:1234"):
         self.qwen_agent = QwenVisionAgent(lm_studio_host)
         self.engines = {}
 
-        logger.info("🎯 Using Qwen2.5-VL as primary text extraction engine")
+        logger.info("🎯 Using Qwen3VL-4B as primary text extraction engine")
 
         # Initialize traditional OCR as fallback only if needed
         self._init_fallback_ocr()
@@ -378,7 +396,7 @@ class EnhancedOCRProcessor:
 
     def extract_text(self, image_path: str) -> Tuple[str, float, str]:
         """
-        Extract text from image using Qwen2.5-VL (primary) or traditional OCR (fallback)
+        Extract text from image using Qwen3VL-4B (primary) or traditional OCR (fallback)
 
         Args:
             image_path: Path to image file
@@ -386,13 +404,13 @@ class EnhancedOCRProcessor:
         Returns:
             Tuple of (extracted_text, confidence_score, method_used)
         """
-        # Try Qwen2.5-VL first (primary method)
+        # Try Qwen3VL-4B first (primary method)
         if self.qwen_agent.is_connected:
             result = self.qwen_agent.extract_cv_data(image_path)
             if result.get("text") and result.get("confidence", 0) > 0.5:
                 return result["text"], result["confidence"], result["method"]
             else:
-                logger.warning("Qwen2.5-VL extraction failed or low confidence, trying fallback OCR")
+                logger.warning("Qwen3VL-4B extraction failed or low confidence, trying fallback OCR")
 
         # Fallback to traditional OCR
         if 'easyocr' in self.engines:
@@ -435,9 +453,9 @@ class EnhancedOCRProcessor:
 
 # Test function
 def test_qwen_vision():
-    """Test Qwen2.5-VL vision agent"""
+    """Test Qwen3VL-4B vision agent"""
     print("=" * 70)
-    print("Testing Qwen2.5-VL Vision Agent")
+    print("Testing Qwen3VL-4B Vision Agent")
     print("=" * 70)
 
     agent = QwenVisionAgent()
@@ -446,11 +464,11 @@ def test_qwen_vision():
         print("❌ LM Studio not connected!")
         print("Please:")
         print("1. Open LM Studio")
-        print("2. Load Qwen2.5-VL-7B-Instruct model")
+        print("2. Load Qwen3VL-4B model")
         print("3. Start the local server")
         return
 
-    print("✅ Qwen2.5-VL connected!")
+    print("✅ Qwen3VL-4B connected!")
 
     # Test with a sample image (you need to provide)
     test_image = "test_cv.jpg"  # Replace with actual path

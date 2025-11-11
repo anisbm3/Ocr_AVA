@@ -1,55 +1,107 @@
-# AI-Powered CV Matcher
+# AI-Powered CV Parser & Job Matcher
 
-Intelligent CV parsing and job matching platform with LLM-powered analysis, web scraping, and modern Gradio interface.
+Intelligent CV parsing and job matching platform with dual extraction methods (Gemini & Qwen Vision), LLM-powered analysis, web scraping, and modern Gradio interface.
 
 ## 🏗️ Project Structure
 
 ```
 python/
-├── ai/                          # Core AI agents and utilities
-│   ├── cv_analyzer.py           # CV analysis components
-│   ├── cv_parser_agent.py       # Main CV parsing agent
-│   ├── job_matcher_agent.py     # Intelligent job matching with LLM
-│   ├── llm_client.py            # LM Studio client for LLM calls
-│   ├── qwen_vision_agent.py     # Qwen Vision for CV text extraction
-│   ├── video_analyzer.py        # Video CV analysis with Qwen Vision
-│   └── web_scraper.py           # GitHub/LinkedIn profile scraping
-├── gradio_interface_v2.py       # Main Gradio web interface
+├── cv_extractor_gemini/         # Gemini-based CV extraction
+├── cv_extractor_qwen/           # Qwen-based CV extraction
+├── job_database/                # Job storage and database operations
+├── job_matcher/                 # Intelligent job matching with LLM
+├── web_scraper/                 # GitHub/LinkedIn profile scraping
+├── llm_clients/                 # LLM client implementations
+├── main.py                      # Main Gradio web interface
 ├── requirements.txt             # Python dependencies
+├── Dockerfile                   # Docker container configuration
+├── docker-compose.yml           # Docker Compose setup
+├── .env                         # Environment variables
 └── README.md                    # This file
 ```
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
-- Python 3.11+
-- LM Studio running on `localhost:1234` with Qwen2.5-VL-7B-Instruct model
-- Tesseract OCR (optional, for fallback text extraction)
+### Prerequisites
+- Python 3.11+ or Docker
+- **For Qwen Vision**: LM Studio running with Qwen2.5-VL-7B model
+- **For Gemini**: Google Gemini API key
 
-### 2. Installation
+### OpenAI-Compatible Endpoints
+
+The application uses these OpenAI-compatible endpoints via LM Studio:
+
+- **GET** `/v1/models` - List available models
+- **POST** `/v1/chat/completions` - Text generation and vision analysis
+
+### WSL Setup (Windows Subsystem for Linux)
+
+If running in WSL, LM Studio runs on Windows host. Configure connectivity:
 
 ```bash
-# Clone or download the project
-cd python/
+# Find Windows host IP from WSL
+ip route | grep default | awk '{print $3}'
 
+# Or use host.docker.internal for Docker
+echo "LM_STUDIO_HOST=http://host.docker.internal:1234" >> .env
+```
+
+### Installation
+
+#### Option 1: Native Python
+```bash
 # Install dependencies
 pip install -r requirements.txt
+
+# Copy and configure environment
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
-### 3. Launch the Interface
+#### Option 2: Docker (Recommended)
+```bash
+# Build and run with Docker Compose
+docker compose up --build
+```
+
+### WSL Setup (Windows Subsystem for Linux)
+
+If running in WSL, LM Studio runs on Windows host. The application automatically handles this:
 
 ```bash
-# Run the main Gradio interface
-python gradio_interface_v2.py
+# Automatic WSL setup (recommended)
+./setup_wsl.sh
+
+# Or manually configure:
+# Find Windows host IP
+ip route | grep default | awk '{print $3}'
+
+# Update .env file
+echo "LM_STUDIO_HOST=http://YOUR_WINDOWS_IP:1234" >> .env
 ```
 
-### 4. Access the Application
-- **Gradio Interface**: <http://localhost:7861> (main interface)
+**WSL Troubleshooting:**
+- Use `host.docker.internal` for Docker containers
+- Use Windows IP (e.g., `172.XX.X.X`) for native Python
+- Ensure LM Studio server is running on `0.0.0.0:1234` (not localhost)
+
+### Launch the Application
+
+```bash
+# Native Python
+python main.py
+
+# Docker (handles WSL networking automatically)
+docker compose up
+```
+
+### Access the Application
+- **Gradio Interface**: <http://localhost:7861> or <http://0.0.0.0:7861>
 
 ## 🤖 AI Features
 
 ### CV Parsing & Analysis
-- **Qwen Vision**: Advanced text extraction from CV images/PDFs using Qwen2.5-VL
+- **Qwen Vision**: Advanced text extraction from CV images/PDFs using Qwen3VL-4B
 - **Structured Parsing**: Extracts personal info, work experience, education, skills
 - **LLM Enhancement**: Intelligent analysis with LM Studio integration
 
@@ -93,8 +145,8 @@ The Gradio interface provides a streamlined three-phase process:
 ## 🔧 Configuration
 
 The system auto-detects LM Studio:
-- **LM Studio URL**: http://localhost:1234
-- **Model**: Qwen2.5-VL-7B-Instruct (recommended)
+- **LM Studio URL**: http://0.0.0.0:1234
+- **Model**: Qwen3VL-4B (recommended)
 - **Fallback**: Basic OCR if LLM unavailable
 
 ## 📝 API Endpoints
@@ -121,7 +173,7 @@ The system auto-detects LM Studio:
 ## 🎯 Usage Example
 
 ### Web Interface (Recommended)
-1. **Launch the interface**: `python gradio_interface_v2.py`
+1. **Launch the interface**: `python main.py`
 2. **Phase 1**: Upload a CV document and click "PARSE CV"
 3. **Phase 2**: Copy the JSON output, paste in job matching tab, add job details and optional GitHub/LinkedIn URLs
 4. **Phase 3**: Optionally upload a video CV for comprehensive analysis
@@ -137,7 +189,7 @@ job = {
     "department": "Engineering",
     "requirements": "5+ years Python, FastAPI, AI/ML experience"
 }
-response = requests.post("http://localhost:8000/api/jobs", json=job)
+response = requests.post("http://0.0.0.0:8000/api/jobs", json=job)
 job_id = response.json()["job_id"]
 
 # 2. Submit a CV
@@ -147,7 +199,7 @@ data = {
     "candidate_name": "John Doe",
     "candidate_email": "john@example.com"
 }
-response = requests.post("http://localhost:8000/api/applications", files=files, data=data)
+response = requests.post("http://0.0.0.0:8000/api/applications", files=files, data=data)
 
 # 3. Get analysis results
 print(response.json())
