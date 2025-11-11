@@ -79,11 +79,38 @@ class CVParserAgent:
         """
         logger.info(f"📄 Starting CV extraction: {cv_path}")
 
-        # Step 1: Extract raw text using PyMuPDF for PDFs, Qwen Vision for images
-        if str(cv_path).lower().endswith('.pdf'):
+        # Step 1: Extract raw text using PyMuPDF for PDFs
+        # Check if it's a PDF file or has no extension (assume PDF from Gradio)
+        file_ext = str(cv_path).lower()
+        if file_ext.endswith('.pdf') or not Path(cv_path).suffix:
             extraction_result = self._extract_pdf_with_pymupdf(cv_path)
         else:
-            extraction_result = self.qwen_agent.extract_cv_data(cv_path)
+            # For non-PDF files, return error
+            logger.error(f"❌ Unsupported file format: {cv_path}. Only PDF files are supported.")
+            return {
+                "personalInformation": {
+                    "fullName": "",
+                    "email": "",
+                    "phone": "",
+                    "location": "",
+                    "summary": ""
+                },
+                "education": [],
+                "workExperience": [],
+                "projects": [],
+                "skills": [],
+                "languages": [],
+                "certifications": [],
+                "awards": [],
+                "volunteerExperience": [],
+                "extractionMetadata": {
+                    "extractionMethod": "unsupported_format",
+                    "confidence": 0.0,
+                    "extractedAt": datetime.utcnow().isoformat(),
+                    "rawTextLength": 0,
+                    "error": f"Unsupported file format: {Path(cv_path).suffix}. Only PDF files are supported."
+                }
+            }
 
         raw_text = extraction_result.get("text", "")
         extraction_method = extraction_result.get("method", "unknown")

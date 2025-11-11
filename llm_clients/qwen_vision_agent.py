@@ -34,10 +34,10 @@ class QwenVisionAgent:
     Replaces traditional OCR with vision-language model capabilities
     """
 
-    def __init__(self, lm_studio_host: str = "http://0.0.0.0:1234"):
+    def __init__(self, lm_studio_host: str = "http://0.0.0.0:1234", model_name: str = None):
         self.lm_studio_host = lm_studio_host
         self.api_url = f"{lm_studio_host}/v1/chat/completions"
-        self.model_name = "qwen2.5-vl-7b"  # Use Qwen2.5-VL-7B model
+        self.model_name = model_name or os.getenv("QWEN_MODEL", "qwen/qwen3-vl-4b")
         self.available_models = []
 
         # Check connection and get available models
@@ -52,10 +52,22 @@ class QwenVisionAgent:
                 self.available_models = [m.get('id', '') for m in models_data.get('data', [])]
                 logger.info(f"✓ LM Studio connected. Available models: {self.available_models}")
                 
-                # Update model_name if qwen2.5-vl-7b is not available but others are
-                if "qwen2.5-vl-7b" not in self.available_models and self.available_models:
-                    self.model_name = self.available_models[0]
-                    logger.info(f"Using available model: {self.model_name}")
+                # Check if specified model is available
+                if self.model_name not in self.available_models:
+                    if self.available_models:
+                        # Try to find a qwen vision model
+                        qwen_models = [m for m in self.available_models if 'qwen' in m.lower() and 'vl' in m.lower()]
+                        if qwen_models:
+                            self.model_name = qwen_models[0]
+                            logger.info(f"⚠️ Specified model not found. Using available model: {self.model_name}")
+                        else:
+                            self.model_name = self.available_models[0]
+                            logger.warning(f"⚠️ No Qwen vision model found. Using: {self.model_name}")
+                    else:
+                        logger.error("❌ No models available in LM Studio")
+                        return False
+                else:
+                    logger.info(f"✅ Using model: {self.model_name}")
                 
                 return True
             else:
@@ -66,12 +78,59 @@ class QwenVisionAgent:
             logger.info("Make sure LM Studio is running with Qwen2.5-VL-7B loaded")
             return False
 
-    def encode_image_to_base64(self, image_path: str) -> Optional[str]:
-        """Encode image to base64 string"""
+    def encode_image_to_base64(self, image_path: str, max_size: int = 1024) -> Optional[str]:
+        """Encode image to base64 string, resizing if necessary"""
         try:
+            if CV2_AVAILABLE:
+                # Use OpenCV for resizing
+                img = cv2.imread(image_path)
+                if img is None:
+                    logger.warning(f"Could not read image with OpenCV: {image_path}")
+                    # Fall back to PIL or direct encoding
+                    with open(image_path, "rb") as image_file:
+                        encoded = base64.b64encode(image_file.read()).decode('utf-8')
+                        return encoded
+                
+                # Resize if too large
+                height, width = img.shape[:2]
+                if width > max_size or height > max_size:
+                    scale = min(max_size / width, max_size / height)
+                    new_width = int(width * scale)
+                    new_height = int(height * scale)
+                    img = cv2.resize(img, (new_width, new_height), interpolation=cv2.INTER_AREA)
+                
+                # Encode to JPEG
+                success, buffer = cv2.imencode('.jpg', img)
+                if success:
+                    encoded = base64.b64encode(buffer.tobytes()).decode('utf-8')
+                    return encoded
+                else:
+                    logger.warning("Failed to encode resized image")
+            
+            elif Image:
+                # Use PIL for resizing
+                img = Image.open(image_path)
+                # Resize if too large
+                width, height = img.size
+                if width > max_size or height > max_size:
+                    img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+                
+                # Convert to RGB if necessary
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # Save to bytes
+                from io import BytesIO
+                buffer = BytesIO()
+                img.save(buffer, format='JPEG')
+                encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                return encoded
+            
+            # Fallback: encode without resizing
             with open(image_path, "rb") as image_file:
                 encoded = base64.b64encode(image_file.read()).decode('utf-8')
                 return encoded
+                
         except Exception as e:
             logger.error(f"Error encoding image {image_path}: {e}")
             return None

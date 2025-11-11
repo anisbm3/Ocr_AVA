@@ -10,6 +10,8 @@ openai==1.54.3
 Pillow>=8.0,<11.0
 PyMuPDF==1.24.14  # For PDF processing
 pytesseract==0.3.13  # OCR fallback for images
+opencv-python>=4.5.0  # Computer vision for image processing
+numpy>=1.21.0  # Numerical computing for image arrays
 
 # Web Scraping (for extracting LinkedIn, GitHub, Portfolio data)
 beautifulsoup4==4.12.3

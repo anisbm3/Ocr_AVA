@@ -6,6 +6,7 @@ Dual extraction methods: Google Gemini & Qwen Vision
 import gradio as gr
 import json
 import os
+import shutil
 import asyncio
 from datetime import datetime
 from typing import Optional, Dict, Any
@@ -135,6 +136,9 @@ def parse_cv_gemini(cv_file):
 def parse_cv_qwen(cv_file):
     """Parse CV using Qwen Vision"""
     try:
+        print(f"🔍 Received cv_file type: {type(cv_file)}")
+        print(f"🔍 cv_file value: {cv_file}")
+        
         if not cv_file:
             return "❌ Error: Please upload a resume!", None
         
@@ -142,22 +146,51 @@ def parse_cv_qwen(cv_file):
         if isinstance(cv_file, str) and cv_file.startswith('data:'):
             import base64
             import tempfile
-            import os
             
             # Extract base64 data from data URL
             header, encoded = cv_file.split(',', 1)
             file_data = base64.b64decode(encoded)
             
-            # Create temporary file
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            # Determine file extension from MIME type
+            mime_type = header.split(';')[0].split(':')[1]
+            if mime_type == 'application/pdf':
+                ext = '.pdf'
+            elif mime_type in ['image/jpeg', 'image/jpg']:
+                ext = '.jpg'
+            elif mime_type == 'image/png':
+                ext = '.png'
+            elif mime_type == 'text/plain':
+                ext = '.txt'
+            else:
+                ext = '.pdf'  # Default fallback
+            
+            # Create temporary file with proper extension
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
                 temp_file.write(file_data)
                 cv_file_path = temp_file.name
             
-            print(f"📄 Processing CV from data URL: {cv_file_path}")
-        else:
+            print(f"📄 Processing CV from data URL: {cv_file_path} (MIME: {mime_type})")
+        elif hasattr(cv_file, 'name'):
             # Handle file object from Gradio interface
             cv_file_path = cv_file.name
-            print(f"📄 Processing CV with Qwen: {cv_file_path}")
+            print(f"📄 Processing CV: {cv_file_path}")
+            
+            # Check if file has no extension (Gradio temporary files)
+            if not os.path.splitext(cv_file_path)[1]:
+                # Copy the file to a new path with .pdf extension instead of renaming
+                # This avoids the file locking issue with Gradio
+                new_path = cv_file_path + '.pdf'
+                try:
+                    shutil.copy2(cv_file_path, new_path)
+                    cv_file_path = new_path
+                    print(f"📄 Copied to PDF: {cv_file_path}")
+                except Exception as e:
+                    print(f"⚠️ Could not copy file: {e}")
+                    print(f"📄 Using original path: {cv_file_path}")
+        else:
+            # Handle other file formats
+            cv_file_path = str(cv_file)
+            print(f"📄 Processing CV (string path): {cv_file_path}")
         
         # Parse CV with Qwen
         parser = get_qwen_parser()
@@ -179,6 +212,8 @@ def parse_cv_qwen(cv_file):
     except Exception as e:
         error_msg = f"❌ Error parsing CV with Qwen: {str(e)}"
         print(error_msg)
+        import traceback
+        traceback.print_exc()
         return error_msg, None
 
 def format_cv_display(resume_data: Dict[str, Any], model_name: str) -> str:
@@ -408,8 +443,7 @@ def create_interface():
                 with gr.Row():
                     with gr.Column(scale=1):
                         gemini_file_input = gr.File(
-                            label="Upload CV/Resume",
-                            file_types=[".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".txt", ".rtf"]
+                            label="Upload CV/Resume"
                         )
                         gemini_parse_btn = gr.Button("🚀 Extract with Gemini", variant="primary", size="lg")
                     
@@ -442,8 +476,7 @@ def create_interface():
                 with gr.Row():
                     with gr.Column(scale=1):
                         qwen_file_input = gr.File(
-                            label="Upload CV/Resume",
-                            file_types=[".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".txt", ".rtf"]
+                            label="Upload CV/Resume"
                         )
                         qwen_parse_btn = gr.Button("🚀 Extract with Qwen", variant="primary", size="lg")
                     
@@ -580,9 +613,21 @@ if __name__ == "__main__":
     """)
 
     app = create_interface()
+
+    # Add CORS headers for frontend integration
+    @app.app.middleware("http")
+    async def add_cors_headers(request, call_next):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
+
     app.launch(
         server_name=app_host,
         server_port=app_port,
         share=False,
-        debug=debug_mode
+        debug=debug_mode,
+        allowed_paths=["/"]  # Allow all paths for CORS
     )
