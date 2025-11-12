@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["overall_score", "section_scores", "sections", "bonus_notes", "final_recommendation"],
+  "properties": {
+    "overall_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Overall ATS compatibility score (0-100)"
+    },
+    "section_scores": {
+      "type": "object",
+      "required": ["profile", "experience", "projects", "skills", "education", "certificates", "languages"],
+      "properties": {
+        "profile": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "experience": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 40
+        },
+        "projects": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "skills": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "education": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "certificates": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "languages": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        }
+      }
+    },
+    "sections": {
+      "type": "object",
+      "required": ["Profile", "Experience", "Projects", "Skills", "Education", "Certificates", "Languages", "Grammar & Style"],
+      "properties": {
+        "Profile": {
+          "$ref": "#/definitions/sectionDetail"
+        },
+        "Experience": {
+          "$ref": "#/definitions/sectionDetail"
+        },
+        "Projects": {
+          "$ref": "#/definitions/sectionDetail"
+        },
+        "Skills": {
+          "$ref": "#/definitions/sectionDetail"
+        },
+        "Education": {
+          "$ref": "#/definitions/sectionDetail"
+        },
+        "Certificates": {
+          "$ref": "#/definitions/sectionDetail"
+        },
+        "Languages": {
+          "$ref": "#/definitions/sectionDetail"
+        },
+        "Grammar & Style": {
+          "$ref": "#/definitions/sectionDetail"
+        }
+      }
+    },
+    "bonus_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional positive observations or recommendations"
+    },
+    "final_recommendation": {
+      "type": "string",
+      "description": "Summary recommendation for the candidate"
+    }
+  },
+  "definitions": {
+    "sectionDetail": {
+      "type": "object",
+      "required": ["score", "errors", "warnings", "advice"],
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Section score based on criteria"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["message", "level"],
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "level": {
+                "type": "string",
+                "enum": ["Error"]
+              }
+            }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["message", "level"],
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "level": {
+                "type": "string",
+                "enum": ["Warning", "Info"]
+              }
+            }
+          }
+        },
+        "advice": {
+          "type": "string",
+          "description": "Actionable advice to improve this section"
+        }
+      }
+    }
+  }
+}

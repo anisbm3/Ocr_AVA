@@ -1,0 +1,68 @@
+{
+  "userProfile": {
+    "name": "",
+    "currentRole": "",
+    "targetRole": "",
+    "skills": [],
+    "weaknesses": [],
+    "experienceYears": null
+  },
+
+  "explainabilityMeta": {
+    "technique": "",
+    "method": "",
+    "feedbackLoopEnabled": true,
+    "contextWindow": ""
+  },
+
+  "aiReasoningTrace": [
+    {
+      "step": null,
+      "identifiedGap": "",
+      "modelExplanation": "",
+      "dataBasis": "",
+      "feedback": {
+        "clarityScore": null,
+        "usefulnessScore": null,
+        "userComment": null
+      }
+    }
+  ],
+
+  "learningPath": {
+    "pathTitle": "",
+    "duration": "",
+    "personalizationScore": null,
+    "steps": [
+      {
+        "stepNumber": null,
+        "title": "",
+        "description": "",
+        "duration": "",
+        "skillsTargeted": [],
+        "recommendedResources": [
+          {
+            "type": "",
+            "title": "",
+            "url": "",
+            "explanation": ""
+          }
+        ],
+        "feedback": {
+          "clarityScore": null,
+          "relevanceScore": null,
+          "difficultyLevel": null,
+          "userComment": null
+        },
+        "explainabilityNote": ""
+      }
+    ]
+  },
+
+  "overallFeedback": {
+    "userUnderstanding": null,
+    "clarityScore": null,
+    "globalComment": null,
+    "AIAction": null
+  }
+}

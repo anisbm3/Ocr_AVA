@@ -1,121 +1,171 @@
 import os
+import sys
 import json
 import dotenv
 import gradio as gr
-from google import genai
+import requests
+import importlib
+import importlib.util
+from pathlib import Path
+from carreer_advisor import (
+    remove_personal_info,
+    load_prompt_files,
+    combine_prompt_parts,
+    query_model,
+    run_advisor,
+    apply_feedback,
+)
+from cv_reviewer.cv_review import review_cv, prepare_ats_prompt, prepare_ats_prompt_multilingual, review_cv_multilingual
+from cv_reviewer.cv_rewriter import rewrite_cv
 
 dotenv.load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Career Advisor Gradio interface
+def career_advisor_fn(cv_json_str: str, desired_paths: list, intentions: str, temperature: float = 0.7, max_tokens: int = 8192):
+    """
+    Main career advisor function:
+    1. Remove personal info from CV
+    2. Assemble advisor input with desired paths and intentions
+    3. Build prompt using prompt file + example + template
+    4. Call model and return response as parsed JSON
+    """
+    # Load prompt files if not already loaded
+    load_prompt_files()
+    
+    # Remove personal info
+    cv_anonymized = remove_personal_info(cv_json_str)
+    if "error" in cv_anonymized:
+        return cv_anonymized
+    
+    # Assemble advisor input
+    advisor_input = {
+        "cv_anonymized": cv_anonymized,
+        "careerIntentions": intentions or "",
+        "desiredPaths": desired_paths or []
+    }
+    
+    # Build prompt
+    prompt = combine_prompt_parts(advisor_input)
+    
+    # Query model
+    response = query_model(prompt, temperature=temperature, max_tokens=max_tokens)
+    
+    # Try to parse response as JSON for gr.JSON output
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        # If response is not valid JSON, return error dict
+        return {
+            "error": "Model response was not valid JSON",
+            "raw_response": response[:1000] + ("..." if len(response) > 1000 else "")
+        }
 
-with open("./cv_template_camelCase.json", "r") as f:
-    CV_TEMPLATE = f.read()  # read as text and not json to pass to the model
-
-
-experiences = """
-[
+def apply_feedback_fn(original_output: str, step_identifier: str, feedback_json_str: str, temperature: float = 0.7, max_tokens: int = 8192):
+    """
+    Apply feedback to a specific step in the advisor output. 
+    Accepts feedback as JSON string and returns the updated step as parsed JSON.
+    
+    Expected feedback format:
     {
-        "jobTitle": "Emergency Medical Technician (EMT)",
-        "company": "Gospa Odv",
-        "location": "",
-        "startDate": "01/2025",
-        "endDate": "Current",
-        "description": ["Provided Basic Life Support (BLS) including CPR and AED.", "Stabilized patients during critical incidents for transport.", "Transported patients safely to medical facilities."],
-        "tags": [""],
-    },
-    {
-        "jobTitle": "Volunteer Firefighter",
-        "company": "Gospa Odv",
-        "location": "",
-        "startDate": "01/2025",
-        "endDate": "Current",
-        "description": ["Responded to fire emergencies and assisted in fire suppression efforts.", "Conducted search and rescue operations in hazardous environments.", "Participated in community fire safety education programs."],
-        "tags": ["firefighter", "emergency response"],
-    },
-]
-"""
+        "clarityScore": <int 1-5 or null>,
+        "relevanceScore": <int 1-5 or null>,
+        "difficultyLevel": <"too easy"|"appropriate"|"too hard" or null>,
+        "userComment": <string or null>
+    }
+    """
+    response = apply_feedback(original_output, step_identifier, feedback_json_str, temperature, max_tokens)
+    
+    # Try to parse response as JSON for gr.JSON output
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        return {
+            "error": "Model response was not valid JSON",
+            "raw_response": response[:1000] + ("..." if len(response) > 1000 else "")
+        }
+
+# Define default career paths
+DEFAULT_PATHS = ["Data Science", "Software Engineer", "Product Manager", "DevOps", "Research", "AI/ML Engineer"]
 
 
-def resume_to_json(filepath):
-    uploaded_file = client.files.upload(file=filepath)
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=[
-            f"""You will receive a resume as the next input. Convert it into a single JSON object that exactly matches the template below:
-            ```json
-            {CV_TEMPLATE}
-            ```
-            Output requirements:
-            - Return only one valid JSON object and nothing else (no explanations, no headings, no surrounding text or code fences).
-            - Preserve the template's keys and structure exactly.
-            - For any missing or unknown value, use the template's empty defaults: empty string "" for text fields and empty list [] for list fields.
-            - For list fields (e.g. skills, languages, certifications) return arrays of short strings.
-            - For workExperience and education entries, populate subfields (title, company, startDate, endDate, description); if a subfield is missing use an empty string.
-            - Ensure the output is valid, parseable JSON.
 
-            Do not include any additional text before or after the JSON object.
-            """,
-            uploaded_file,
-        ],
-    )
-    text_output = response.text
-    # locate the first "{" and the last "}"
-    json_start = text_output.find("{")
-    json_end = text_output.rfind("}") + 1
-    return json.loads(text_output[json_start:json_end])
-
-
-def judge_experience(experience):
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=[
-            f"""
-You are an expert career advisor. Evaluate each description field of the following work experience for two criteria:
-1. Does it follow the format "achieved X by Y", where X is a quantifiable result and Y is the action taken? If yes, respond with "Respected". If not, suggest a revised version that fits this format.
-2. Does it use weak action verbs (e.g., "assisted", "helped", "participated")? If so, suggest stronger alternatives.
-
-Return your output in the following JSON format (no extra text):
-[
-    {{
-        "xyz_format": "Respected" | "Unrespected",
-        "weak_verbs": "Weak" | "Strong",
-        "suggested_modification": "..."
-    }}
-]
-Example experience:
-"Increased patient transport efficiency by 20% by optimizing ambulance routes."
-
-Here is the experience to evaluate:
-{experience}
-"""
-        ],
-    )
-    text_output = response.text
-    json_start = text_output.find("[")
-    json_end = text_output.rfind("]") + 1
-    return json.loads(text_output[json_start:json_end])
-
-
-resume_to_json_extractor = gr.Interface(
-    fn=resume_to_json,
-    inputs="file",
-    outputs="json",
-    title="Resume to JSON Extractor",
-    api_name="resume_to_json_extractor",
+CV_reviewer = gr.Interface(
+    fn=review_cv,
+    inputs=[
+        gr.Textbox(lines=20, label="Paste CV JSON", placeholder='{"personalInformation": {...}, "experience": [...], ...}'),
+        gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.05, label="Temperature"),
+        gr.Slider(minimum=128, maximum=16384, value=2048, step=128, label="Max Tokens"),
+    ],
+    outputs="text",
+    title="CV Reviewer (English)",
+    description="Reviews your CV using OpenRouter (primary) or LMStudio (fallback). Provides detailed ATS-optimized feedback in English.",
+    api_name="cv_reviewer",
 )
 
-Experience_judge = gr.Interface(
-    fn=judge_experience,
-    inputs=gr.Textbox(lines=10),
-    outputs="json",
-    title="Experience Judge",
-    api_name="Experience_judge",
-    examples=[experiences],
+CV_reviewer_multilingual = gr.Interface(
+    fn=review_cv_multilingual,
+    inputs=[
+        gr.Textbox(lines=20, label="Paste CV JSON", placeholder='{"personalInformation": {...}, "experience": [...], ...}'),
+        gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.05, label="Temperature"),
+        gr.Slider(minimum=128, maximum=16384, value=4000, step=128, label="Max Tokens"),
+    ],
+    outputs="text",
+    title="CV Reviewer (Multilingual)",
+    description="Reviews your CV with automatic language detection (English/French/Arabic). Responds in the same language as your CV. Uses OpenRouter (primary) or LMStudio (fallback).",
+    api_name="cv_reviewer_multilingual",
+)
+
+CV_rewriter = gr.Interface(
+    fn=rewrite_cv,
+    inputs=[
+        gr.Textbox(lines=20, label="Paste CV JSON", placeholder='{"personalInformation": {...}, "experience": [...], ...}'),
+        gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.05, label="Temperature"),
+        gr.Slider(minimum=128, maximum=16384, value=8192, step=128, label="Max Tokens"),
+    ],
+    outputs="text",
+    title="CV Rewriter",
+    description="Rewrites your CV to be ATS-optimized. Applies XYZ pattern (Accomplished X, measured by Y, by doing Z) to all bullets. Adds quantifiable metrics and uses strong action verbs. Uses OpenRouter (primary) or LMStudio (fallback).",
+    api_name="cv_rewriter",
+)
+
+Carreer_advisor = gr.Interface(
+   
+    fn=career_advisor_fn,
+    inputs=[
+        gr.Textbox(lines=20, label="Paste Full CV JSON", placeholder='{"skills": [...], "experience": [...], ...}'),
+        gr.CheckboxGroup(choices=DEFAULT_PATHS, label="Desired Career Paths (select one or more)", value=[]),
+        gr.Textbox(lines=3, label="Career Intentions / Goals", placeholder="What are your career goals?"),
+        gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.05, label="Temperature"),
+        gr.Slider(minimum=128, maximum=16384, value=8192, step=128, label="Max Tokens"),
+    ],
+    outputs=gr.JSON(label="Career Advisor Output (JSON)"),
+    title="Career Advisor",
+    description="Provides personalized career guidance based on your CV, desired paths, and intentions.",
+    api_name="career_advisor",
+)
+Feedback_interface = gr.Interface(
+    fn=apply_feedback_fn,
+    inputs=[
+        gr.Textbox(lines=20, label="Original Advisor Output (Full JSON)", placeholder="Paste the complete JSON output from Career Advisor"),
+        gr.Textbox(label="Step Number", placeholder="e.g., '1', '2', '3'"),
+        gr.Textbox(
+            lines=8, 
+            label="Feedback JSON", 
+            placeholder='{\n  "clarityScore": null,\n  "relevanceScore": null,\n  "difficultyLevel": null,\n  "userComment": null\n}',
+            value='{\n  "clarityScore": null,\n  "relevanceScore": null,\n  "difficultyLevel": null,\n  "userComment": null\n}'
+        ),
+        gr.Slider(minimum=0.0, maximum=1.0, value=0.7, step=0.05, label="Temperature"),
+        gr.Slider(minimum=128, maximum=16384, value=8192, step=128, label="Max Tokens"),
+    ],
+    outputs=gr.JSON(label="Updated Step (JSON)"),
+    title="Apply Feedback to Learning Path Step",
+    description="Provide feedback on a specific step. Fill in the feedback JSON with your scores (1-5), difficulty level (\"too easy\", \"appropriate\", \"too hard\"), and comments.",
+    api_name="apply_feedback",
 )
 
 demo = gr.TabbedInterface(
-    [resume_to_json_extractor, Experience_judge], [
-        "Resume to JSON", "Experience Judge"]
+    [CV_reviewer, CV_reviewer_multilingual, CV_rewriter, Carreer_advisor, Feedback_interface],
+    ["CV Reviewer", "CV Reviewer (Multilingual)", "CV Rewriter", "Career Advisor", "Apply Feedback"],
 )
 
-demo.launch()
+demo.launch(debug=True, mcp_server=True)

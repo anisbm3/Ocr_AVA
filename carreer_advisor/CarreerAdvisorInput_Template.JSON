@@ -1,0 +1,41 @@
+{
+  "cv_anonymized": {
+    "skills": ["Python", "FastAPI", "PostgreSQL", "Docker", "Git", "AWS Basics"],
+    "experience": [
+      {
+        "title": "Backend Developer",
+        "start_date": "2022-01",
+        "end_date": "2024-05",
+        "description": "Built RESTful APIs, containerized services using Docker, and deployed on AWS ECS."
+      },
+      {
+        "title": "Data Science Intern",
+        "start_date": "2021-06",
+        "end_date": "2021-09",
+        "description": "Supported predictive modeling using scikit-learn; created SQL data pipelines."
+      }
+    ],
+    "projects": [
+      {
+        "title": "Smart Energy Dashboard",
+        "technologies": ["React", "FastAPI", "AWS Lambda"],
+        "description": "Developed a cloud dashboard to visualize energy metrics."
+      }
+    ],
+    "education": {
+      "degree": "Bachelor in Computer Science",
+      "field": "Software Engineering"
+    },
+    "certifications": [
+      {
+        "title": "AWS Cloud Practitioner",
+        "issuer": "Amazon Web Services",
+        "date": "2023-02"
+      }
+    ]
+  },
+
+  "careerIntentions": "I want to grow beyond backend development into a higher-level architecture and leadership role. I’m passionate about designing scalable systems, mentoring developers, and integrating AI components into backend systems.",
+
+  "desiredPaths": ["Senior Software Architect", "Tech Lead"]
+}
