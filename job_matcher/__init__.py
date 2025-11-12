@@ -29,20 +29,22 @@ class JobMatcherAgent:
     Provides detailed scoring and recommendations
     """
     
-    def __init__(self, llm_client=None, enable_web_scraping=True):
+    def __init__(self, llm_client=None, enable_web_scraping=True, web_scraping_timeout=10):
         """
         Initialize Job Matcher
         
         Args:
             llm_client: Optional LLMClient for enhanced analysis
             enable_web_scraping: Whether to scrape candidate's online profiles
+            web_scraping_timeout: Timeout for web scraping requests in seconds
         """
         self.llm_client = llm_client
         self.enable_web_scraping = enable_web_scraping and WEB_SCRAPING_AVAILABLE
-        self.web_scraper = WebScraper() if self.enable_web_scraping else None
+        self.web_scraping_timeout = web_scraping_timeout
+        self.web_scraper = WebScraper(timeout=web_scraping_timeout) if self.enable_web_scraping else None
         
         if self.enable_web_scraping:
-            logger.info("✅ Job Matcher Agent initialized with web scraping enabled")
+            logger.info(f"✅ Job Matcher Agent initialized with web scraping enabled (timeout: {web_scraping_timeout}s)")
         else:
             logger.info("✅ Job Matcher Agent initialized (web scraping disabled)")
 

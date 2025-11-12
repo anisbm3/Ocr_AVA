@@ -49,13 +49,13 @@ def get_gemini_extractor():
     return gemini_extractor
 
 
-def get_qwen_parser():
+def get_qwen_parser(llm_host=None, qwen_model=None):
     """Lazy initialization of Qwen CV parser with Qwen2.5-VL-7B"""
     global qwen_agent, llm_client, qwen_parser
     if qwen_parser is None:
         try:
-            lm_studio_host = os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
-            qwen_model = os.getenv("QWEN_MODEL", "qwen2.5-vl-7b")
+            lm_studio_host = llm_host or os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
+            qwen_model = qwen_model or os.getenv("QWEN_MODEL", "qwen2.5-vl-7b")
 
             print(f"🔧 Connecting to LM Studio at: {lm_studio_host}")
             print("   If running in WSL, make sure LM Studio is running on Windows host")
@@ -80,20 +80,20 @@ def get_qwen_parser():
     return qwen_parser
 
 
-def get_job_matcher():
+def get_job_matcher(llm_host=None, qwen_model=None, scrape_enabled=True, scrape_timeout=10):
     """Lazy initialization of job matcher with Qwen2.5-VL-7B"""
     global llm_client, job_matcher
     if job_matcher is None:
         try:
             if llm_client is None:
-                lm_studio_host = os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
-                qwen_model = os.getenv("QWEN_MODEL", "qwen2.5-vl-7b")
+                lm_studio_host = llm_host or os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
+                qwen_model = qwen_model or os.getenv("QWEN_MODEL", "qwen2.5-vl-7b")
                 llm_client = LLMClient(lm_studio_host=lm_studio_host, preferred_model=qwen_model)
-            job_matcher = JobMatcherAgent(llm_client)
+            job_matcher = JobMatcherAgent(llm_client, scrape_enabled, scrape_timeout)
             print(f"✅ Job matcher initialized with {qwen_model}")
         except Exception as e:
             print(f"⚠️ Warning: Could not initialize job matcher: {e}")
-            job_matcher = JobMatcherAgent(None)
+            job_matcher = JobMatcherAgent(None, scrape_enabled, scrape_timeout)
     return job_matcher
 
 
@@ -101,11 +101,17 @@ def get_job_matcher():
 # CV PARSING - GEMINI
 # ============================================================================
 
-def parse_cv_gemini(cv_file):
+def parse_cv_gemini(cv_file, max_upload_mb):
     """Parse CV using Google Gemini"""
     try:
         if not cv_file:
             return "❌ Error: Please upload a resume!", None
+        
+        # Check file size
+        if hasattr(cv_file, 'size'):
+            file_size_mb = cv_file.size / (1024 * 1024)
+            if file_size_mb > max_upload_mb:
+                return f"❌ Error: File size ({file_size_mb:.1f}MB) exceeds limit ({max_upload_mb}MB)!", None
         
         print(f"📄 Processing CV with Gemini: {cv_file.name}")
         
@@ -133,7 +139,7 @@ def parse_cv_gemini(cv_file):
 # CV PARSING - QWEN
 # ============================================================================
 
-def parse_cv_qwen(cv_file):
+def parse_cv_qwen(cv_file, llm_host, qwen_model, max_upload_mb):
     """Parse CV using Qwen Vision"""
     try:
         print(f"🔍 Received cv_file type: {type(cv_file)}")
@@ -141,6 +147,12 @@ def parse_cv_qwen(cv_file):
         
         if not cv_file:
             return "❌ Error: Please upload a resume!", None
+        
+        # Check file size
+        if hasattr(cv_file, 'size'):
+            file_size_mb = cv_file.size / (1024 * 1024)
+            if file_size_mb > max_upload_mb:
+                return f"❌ Error: File size ({file_size_mb:.1f}MB) exceeds limit ({max_upload_mb}MB)!", None
         
         # Handle data URL input from frontend
         if isinstance(cv_file, str) and cv_file.startswith('data:'):
@@ -193,7 +205,7 @@ def parse_cv_qwen(cv_file):
             print(f"📄 Processing CV (string path): {cv_file_path}")
         
         # Parse CV with Qwen
-        parser = get_qwen_parser()
+        parser = get_qwen_parser(llm_host, qwen_model)
         resume_data = asyncio.run(parser.extract_and_parse_cv(cv_file_path))
         
         # Clean up temp file if created
@@ -307,7 +319,8 @@ def format_cv_display(resume_data: Dict[str, Any], model_name: str) -> str:
 # ============================================================================
 
 def match_job(cv_json: str, job_title: str, job_requirements: str, job_description: str, 
-              github_url: str = "", linkedin_url: str = "") -> str:
+              github_url: str = "", linkedin_url: str = "", llm_host=None, qwen_model=None, 
+              scrape_enabled=True, scrape_timeout=10) -> str:
     """Match CV with job requirements using LLM"""
     try:
         if not cv_json or not job_title:
@@ -322,7 +335,7 @@ def match_job(cv_json: str, job_title: str, job_requirements: str, job_descripti
             return "❌ Error: Invalid CV JSON format"
         
         # Get job matcher
-        matcher = get_job_matcher()
+        matcher = get_job_matcher(llm_host, qwen_model, scrape_enabled, scrape_timeout)
         
         # Prepare job data
         job_data = {
@@ -331,12 +344,13 @@ def match_job(cv_json: str, job_title: str, job_requirements: str, job_descripti
             "description": job_description
         }
         
-        # Add URLs if provided
+        # Add URLs if provided and scraping enabled
         urls = []
-        if github_url:
-            urls.append(github_url)
-        if linkedin_url:
-            urls.append(linkedin_url)
+        if scrape_enabled:
+            if github_url:
+                urls.append(github_url)
+            if linkedin_url:
+                urls.append(linkedin_url)
         
         # Run matching
         result = asyncio.run(matcher.match_cv_to_job(
@@ -344,8 +358,8 @@ def match_job(cv_json: str, job_title: str, job_requirements: str, job_descripti
             job_data["title"],
             job_data["description"],
             job_data["requirements"],
-            github_url=github_url if github_url else "",
-            linkedin_url=linkedin_url if linkedin_url else ""
+            github_url=github_url if scrape_enabled and github_url else "",
+            linkedin_url=linkedin_url if scrape_enabled and linkedin_url else ""
         ))
         
         # Format result
@@ -389,11 +403,13 @@ def match_job(cv_json: str, job_title: str, job_requirements: str, job_descripti
 
 ## 🌐 Web Scraping Results
 """
-        if result.get('web_scraping_data'):
+        if scrape_enabled and result.get('web_scraping_data'):
             for url, data in result.get('web_scraping_data', {}).items():
                 display_md += f"\n**{url}:**\n{json.dumps(data, indent=2)}\n"
-        else:
+        elif scrape_enabled:
             display_md += "No web scraping data available\n"
+        else:
+            display_md += "Web scraping disabled\n"
 
         return display_md
         
@@ -417,7 +433,25 @@ def format_list(items):
 def create_interface():
     """Create the Gradio interface"""
     
+    # Initialize settings from environment
+    default_llm_host = os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
+    default_qwen_model = os.getenv("QWEN_MODEL", "qwen/qwen3-vl-4b")
+    default_scrape_enabled = True
+    default_scrape_timeout = int(os.getenv("WEB_SCRAPE_TIMEOUT", "10"))
+    default_max_upload_mb = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))
+    default_cv_template_path = os.getenv("CV_TEMPLATE_PATH", "./cv_template_camelCase.json")
+    default_job_desc_path = os.getenv("JOB_DESCRIPTIONS_PATH", "./job_descriptions.json")
+    
     with gr.Blocks(title="CV Parser & Job Matcher", theme=gr.themes.Soft()) as app:
+        
+        # State management for settings
+        llm_host_state = gr.State(default_llm_host)
+        qwen_model_state = gr.State(default_qwen_model)
+        scrape_enabled_state = gr.State(default_scrape_enabled)
+        scrape_timeout_state = gr.State(default_scrape_timeout)
+        max_upload_mb_state = gr.State(default_max_upload_mb)
+        cv_template_path_state = gr.State(default_cv_template_path)
+        job_desc_path_state = gr.State(default_job_desc_path)
         
         gr.Markdown("""
         # 🎯 AI-Powered CV Parser & Job Matcher
@@ -443,7 +477,8 @@ def create_interface():
                 with gr.Row():
                     with gr.Column(scale=1):
                         gemini_file_input = gr.File(
-                            label="Upload CV/Resume"
+                            label="Upload CV/Resume",
+                            file_types=[".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".txt"]
                         )
                         gemini_parse_btn = gr.Button("🚀 Extract with Gemini", variant="primary", size="lg")
                     
@@ -459,7 +494,7 @@ def create_interface():
                 
                 gemini_parse_btn.click(
                     fn=parse_cv_gemini,
-                    inputs=[gemini_file_input],
+                    inputs=[gemini_file_input, max_upload_mb_state],
                     outputs=[gemini_display_output, gemini_json_output]
                 )
             
@@ -476,7 +511,8 @@ def create_interface():
                 with gr.Row():
                     with gr.Column(scale=1):
                         qwen_file_input = gr.File(
-                            label="Upload CV/Resume"
+                            label="Upload CV/Resume",
+                            file_types=[".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".txt"]
                         )
                         qwen_parse_btn = gr.Button("🚀 Extract with Qwen", variant="primary", size="lg")
                     
@@ -492,7 +528,7 @@ def create_interface():
                 
                 qwen_parse_btn.click(
                     fn=parse_cv_qwen,
-                    inputs=[qwen_file_input],
+                    inputs=[qwen_file_input, llm_host_state, qwen_model_state, max_upload_mb_state],
                     outputs=[qwen_display_output, qwen_json_output]
                 )
             
@@ -552,10 +588,150 @@ def create_interface():
                         job_requirements_input,
                         job_description_input,
                         github_url_input,
-                        linkedin_url_input
+                        linkedin_url_input,
+                        llm_host_state,
+                        qwen_model_state,
+                        scrape_enabled_state,
+                        scrape_timeout_state
                     ],
                     outputs=[match_output]
                 )
+            
+            # ====== TAB 4: SETTINGS & CONFIGURATION ======
+            with gr.Tab("⚙️ Settings & Configuration"):
+                gr.Markdown("""
+                ## Advanced Configuration
+                
+                Configure LLM models, web scraping settings, and file paths.
+                Changes take effect immediately for new operations.
+                """)
+                
+                with gr.Accordion("🤖 LLM Configuration", open=True):
+                    gr.Markdown("Configure LLM client settings for Qwen and other models.")
+                    
+                    llm_host_input = gr.Textbox(
+                        label="LM Studio Host",
+                        value=default_llm_host,
+                        placeholder="http://host.docker.internal:1234"
+                    )
+                    
+                    qwen_model_input = gr.Dropdown(
+                        label="Qwen Model",
+                        choices=["qwen/qwen3-vl-4b", "qwen2.5-vl-7b", "qwen2-vl-7b", "other"],
+                        value=default_qwen_model,
+                        allow_custom_value=True
+                    )
+                    
+                    test_llm_btn = gr.Button("🧪 Test LLM Connection", variant="secondary")
+                    test_llm_output = gr.Textbox(label="Test Result", interactive=False)
+                    
+                    def update_llm_settings(host, model):
+                        llm_host_state.value = host
+                        qwen_model_state.value = model
+                        return f"✅ Settings updated: Host={host}, Model={model}"
+                    
+                    def test_llm_connection(host, model):
+                        try:
+                            # Test connection by initializing LLM client
+                            test_client = LLMClient(lm_studio_host=host, preferred_model=model)
+                            # Try a simple request
+                            import asyncio
+                            response = asyncio.run(test_client.generate("Hello", max_tokens=10))
+                            return f"✅ Connection successful! Response: {response[:50]}..."
+                        except Exception as e:
+                            return f"❌ Connection failed: {str(e)}"
+                    
+                    llm_host_input.change(
+                        fn=update_llm_settings,
+                        inputs=[llm_host_input, qwen_model_input],
+                        outputs=[]
+                    )
+                    qwen_model_input.change(
+                        fn=update_llm_settings,
+                        inputs=[llm_host_input, qwen_model_input],
+                        outputs=[]
+                    )
+                    
+                    test_llm_btn.click(
+                        fn=test_llm_connection,
+                        inputs=[llm_host_input, qwen_model_input],
+                        outputs=[test_llm_output]
+                    )
+                
+                with gr.Accordion("🌐 Web Scraping Controls", open=False):
+                    gr.Markdown("Control web scraping behavior for GitHub/LinkedIn profiles.")
+                    
+                    scrape_enabled_input = gr.Checkbox(
+                        label="Enable Web Scraping",
+                        value=default_scrape_enabled
+                    )
+                    
+                    scrape_timeout_input = gr.Number(
+                        label="Scraping Timeout (seconds)",
+                        value=default_scrape_timeout,
+                        minimum=1,
+                        maximum=60
+                    )
+                    
+                    def update_scrape_settings(enabled, timeout):
+                        scrape_enabled_state.value = enabled
+                        scrape_timeout_state.value = timeout
+                        return f"✅ Web scraping settings updated: Enabled={enabled}, Timeout={timeout}s"
+                    
+                    scrape_enabled_input.change(
+                        fn=update_scrape_settings,
+                        inputs=[scrape_enabled_input, scrape_timeout_input],
+                        outputs=[]
+                    )
+                    scrape_timeout_input.change(
+                        fn=update_scrape_settings,
+                        inputs=[scrape_enabled_input, scrape_timeout_input],
+                        outputs=[]
+                    )
+                
+                with gr.Accordion("📁 File Configuration", open=False):
+                    gr.Markdown("Configure file paths and upload limits.")
+                    
+                    max_upload_mb_input = gr.Number(
+                        label="Maximum Upload Size (MB)",
+                        value=default_max_upload_mb,
+                        minimum=1,
+                        maximum=100
+                    )
+                    
+                    cv_template_path_input = gr.Textbox(
+                        label="CV Template Path",
+                        value=default_cv_template_path,
+                        placeholder="./cv_template_camelCase.json"
+                    )
+                    
+                    job_desc_path_input = gr.Textbox(
+                        label="Job Descriptions Path",
+                        value=default_job_desc_path,
+                        placeholder="./job_descriptions.json"
+                    )
+                    
+                    def update_file_settings(max_mb, cv_path, job_path):
+                        max_upload_mb_state.value = max_mb
+                        cv_template_path_state.value = cv_path
+                        job_desc_path_state.value = job_path
+                        return f"✅ File settings updated: Max={max_mb}MB, CV={cv_path}, Jobs={job_path}"
+                    
+                    max_upload_mb_input.change(
+                        fn=update_file_settings,
+                        inputs=[max_upload_mb_input, cv_template_path_input, job_desc_path_input],
+                        outputs=[]
+                    )
+                    cv_template_path_input.change(
+                        fn=update_file_settings,
+                        inputs=[max_upload_mb_input, cv_template_path_input, job_desc_path_input],
+                        outputs=[]
+                    )
+                    job_desc_path_input.change(
+                        fn=update_file_settings,
+                        inputs=[max_upload_mb_input, cv_template_path_input, job_desc_path_input],
+                        outputs=[]
+                    )
         
         gr.Markdown("""
         ---
