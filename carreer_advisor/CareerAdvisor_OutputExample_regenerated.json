@@ -1,0 +1,134 @@
+{
+  "userProfile": {
+    "currentRole": "Backend Developer",
+    "targetRole": "Solutions Architect",
+    "skills": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+    "weaknesses": ["System Design", "Cloud Infrastructure", "Scalability", "Networking"],
+    "experienceYears": 2
+  },
+
+  "explainabilityMeta": {
+    "technique": "Human-Centered Explainability",
+    "method": "Interactive Explanation + Section-Level Feedback",
+    "feedbackLoopEnabled": true,
+    "contextWindow": "per-step + per-section reasoning transparency"
+  },
+
+  "aiReasoningTrace": [
+    {
+      "step": 1,
+      "identifiedGap": "System Design",
+      "modelExplanation": "Detected limited exposure to distributed system patterns and scaling.",
+      "dataBasis": "Absence of keywords like 'scalability', 'load balancing', or 'system patterns' in prior project descriptions.",
+      "feedback": {
+        "clarityScore": null,
+        "relevanceScore": null,
+        "userComment": null
+      }
+    },
+    {
+      "step": 2,
+      "identifiedGap": "Cloud Infrastructure (AWS)",
+      "modelExplanation": "Inferred a lack of hands-on cloud deployment experience.",
+      "dataBasis": "No explicit mentions of ECS/EC2 or deployment workflows in the candidate's history.",
+      "feedback": {
+        "clarityScore": null,
+        "relevanceScore": null,
+        "userComment": null
+      }
+    }
+  ],
+
+  "learningPath": {
+    "pathTitle": "Backend Developer → Solutions Architect",
+    "duration": "18 months",
+    "personalizationScore": 94,
+    "steps": [
+      {
+        "stepNumber": 1,
+        "title": "Strengthen System Design Foundations",
+        "description": "Master architecture patterns, scaling principles, and system reliability.",
+        "duration": "3 months",
+        "skillsTargeted": ["System Design", "Scalability", "Architecture Patterns"],
+        "recommendedResources": [
+          {
+            "type": "YouTube",
+            "title": "System Design Primer for Interview and Real-World Scaling",
+            "url": "https://www.youtube.com/watch?v=UzLMhqg3_Wc",
+            "explanation": "Selected to improve understanding of distributed and scalable architectures."
+          },
+          {
+            "type": "Coursera",
+            "title": "Scalable Microservices with Kubernetes",
+            "url": "https://www.coursera.org/learn/scalable-microservices-kubernetes",
+            "explanation": "Provides hands-on understanding of scalable design principles."
+          }
+        ],
+        "feedback": {
+          "clarityScore": null,
+          "relevanceScore": null,
+          "difficultyLevel": null,
+          "userComment": null
+        },
+        "explainabilityNote": "Shows rationale: gaps in distributed systems and suggested exercises."
+      },
+      {
+        "stepNumber": 2,
+        "title": "Master AWS Cloud Architecture",
+        "description": "Learn to design, deploy, and secure applications on AWS.",
+        "duration": "4 months",
+        "skillsTargeted": ["AWS", "Cloud Architecture", "Deployment"],
+        "recommendedResources": [
+          {
+            "type": "YouTube",
+            "title": "AWS Certified Solutions Architect – Full Course",
+            "url": "https://www.youtube.com/watch?v=Ia-UEYYR44s",
+            "explanation": "Teaches AWS services relevant for architecture-level design."
+          },
+          {
+            "type": "Coursera",
+            "title": "Architecting with Google Cloud: Design and Process",
+            "url": "https://www.coursera.org/learn/gcp-architecture",
+            "explanation": "Adds multi-cloud architectural understanding."
+          }
+        ],
+        "feedback": {
+          "clarityScore": null,
+          "relevanceScore": null,
+          "difficultyLevel": null,
+          "userComment": null
+        },
+        "explainabilityNote": "Includes milestone-based guided projects for AWS skills."
+      },
+      {
+        "stepNumber": 3,
+        "title": "Capstone Project – Build and Explain a Cloud-Native System",
+        "description": "Develop a production-ready backend using FastAPI, Docker, and a managed container platform.",
+        "duration": "5 months",
+        "skillsTargeted": ["System Design","Cloud Deployment","CI/CD"],
+        "recommendedResources": [
+          {
+            "type": "Project",
+            "title": "Design a Scalable Event-Driven App with Cloud Services",
+            "url": "https://cloud-provider.example/getting-started/",
+            "explanation": "Tests the ability to design and justify architecture choices without vendor-specific bias."
+          }
+        ],
+        "feedback": {
+          "clarityScore": null,
+          "relevanceScore": null,
+          "difficultyLevel": null,
+          "userComment": null
+        },
+        "explainabilityNote": "Capstone requires written justification for each architecture decision."
+      }
+    ]
+  },
+
+  "overallFeedback": {
+    "userUnderstanding": null,
+    "clarityScore": null,
+    "globalComment": null,
+    "AIAction": null
+  }
+}

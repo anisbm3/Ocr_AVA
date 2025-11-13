@@ -1,0 +1,64 @@
+{
+  "overall_score": null,
+  "section_scores": {
+    "profile": null,
+    "experience": null,
+    "projects": null,
+    "skills": null,
+    "education": null,
+    "certificates": null,
+    "languages": null
+  },
+  "sections": {
+    "Profile": {
+      "score": null,
+      "errors": [],
+      "warnings": [],
+      "advice": ""
+    },
+    "Experience": {
+      "score": null,
+      "errors": [],
+      "warnings": [],
+      "advice": ""
+    },
+    "Projects": {
+      "score": null,
+      "errors": [],
+      "warnings": [],
+      "advice": ""
+    },
+    "Skills": {
+      "score": null,
+      "errors": [],
+      "warnings": [],
+      "advice": ""
+    },
+    "Education": {
+      "score": null,
+      "errors": [],
+      "warnings": [],
+      "advice": ""
+    },
+    "Certificates": {
+      "score": null,
+      "errors": [],
+      "warnings": [],
+      "advice": ""
+    },
+    "Languages": {
+      "score": null,
+      "errors": [],
+      "warnings": [],
+      "advice": ""
+    },
+    "Grammar & Style": {
+      "score": null,
+      "errors": [],
+      "warnings": [],
+      "advice": ""
+    }
+  },
+  "bonus_notes": [],
+  "final_recommendation": ""
+}
