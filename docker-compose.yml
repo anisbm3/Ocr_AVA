@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  cv-parser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cv-parser-app
+    ports:
+      - "7861:7861"
+    environment:
+      # Load from .env file
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - LM_STUDIO_HOST=${LM_STUDIO_HOST:-http://host.docker.internal:1234}
+      - QWEN_MODEL=${QWEN_MODEL:-qwen2.5-vl-7b}
+      - APP_HOST=${APP_HOST:-0.0.0.0}
+      - APP_PORT=${APP_PORT:-7861}
+      - DEBUG=${DEBUG:-false}
+      - CV_TEMPLATE_PATH=${CV_TEMPLATE_PATH:-./cv_template_camelCase.json}
+    volumes:
+      # Mount CV template and data
+      - ./cv_template_camelCase.json:/app/cv_template_camelCase.json:ro
+      - ./chroma:/app/chroma
+      # Optional: Mount local job descriptions
+      - ./job_descriptions.json:/app/job_descriptions.json:ro
+    extra_hosts:
+      # Allow container to reach Windows host for LM Studio
+      - "host.docker.internal:host-gateway"
+    networks:
+      - cv-parser-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:7861')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  cv-parser-network:
+    driver: bridge
+
+volumes:
+  chroma-data:

@@ -2,6 +2,8 @@
   "personalInformation": {
     "fullName": "",
     "email": "",
+    "phone": "",
+    "location": "",
     "links": [],
     "summary": ""
   },

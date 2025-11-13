@@ -1,3 +1,6 @@
+# Environment variables
+.env
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -25,6 +28,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+uploads/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -212,3 +217,12 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# local
+.vscode
+chroma
+# Logs
+*.log
+# IDEs
+.idea/
+.vscode/
