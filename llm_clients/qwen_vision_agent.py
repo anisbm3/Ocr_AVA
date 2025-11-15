@@ -34,10 +34,10 @@ class QwenVisionAgent:
     Replaces traditional OCR with vision-language model capabilities
     """
 
-    def __init__(self, lm_studio_host: str = "http://0.0.0.0:1234", model_name: str = None):
+    def __init__(self, lm_studio_host: str = "http://localhost:1234", model_name: str = None):
         self.lm_studio_host = lm_studio_host
         self.api_url = f"{lm_studio_host}/v1/chat/completions"
-        self.model_name = model_name or os.getenv("QWEN_MODEL", "qwen/qwen3-vl-4b")
+        self.model_name = model_name or os.getenv("QWEN_MODEL", "qwen3-vl-4b")
         self.available_models = []
 
         # Check connection and get available models
@@ -202,7 +202,7 @@ class QwenVisionAgent:
             response = requests.post(
                 self.api_url,
                 json=payload,
-                timeout=120  # Vision models may take longer
+                timeout=300  # Vision models may take longer - increased to 5 minutes
             )
             response.raise_for_status()
 
@@ -428,7 +428,7 @@ class EnhancedOCRProcessor:
     Falls back to traditional OCR if needed
     """
 
-    def __init__(self, lm_studio_host: str = "http://0.0.0.0:1234"):
+    def __init__(self, lm_studio_host: str = "http://localhost:1234"):
         self.qwen_agent = QwenVisionAgent(lm_studio_host)
         self.engines = {}
 

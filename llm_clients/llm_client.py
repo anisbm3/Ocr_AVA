@@ -16,7 +16,7 @@ class LLMClient:
     Use for: CV parsing, job matching, skill analysis, text generation, etc.
     """
 
-    def __init__(self, lm_studio_host: str = "http://0.0.0.0:1234", preferred_model: str = "qwen2.5-vl-7b"):
+    def __init__(self, lm_studio_host: str = "http://localhost:1234", preferred_model: str = "qwen2.5-vl-7b"):
         """
         Initialize LLM Client
         
@@ -105,7 +105,7 @@ class LLMClient:
                 "stream": False
             }
             
-            response = requests.post(self.lm_studio_url, json=payload, timeout=180)
+            response = requests.post(self.lm_studio_url, json=payload, timeout=300)
             response.raise_for_status()
             
             result = response.json()
@@ -164,7 +164,10 @@ class LLMClient:
                 "skills_score": 40.0,
                 "analysis": "Candidate has basic programming skills but lacks modern web development experience."
             })
-        elif "professional cv/resume parser" in prompt.lower() or ("extract and structure" in prompt.lower() and "resume" in prompt.lower()):
+        elif "professional cv/resume parser" in prompt.lower() or \
+             ("extract and structure" in prompt.lower() and "resume" in prompt.lower()) or \
+             ("you will receive a resume" in prompt.lower() and "json" in prompt.lower()) or \
+             ("convert it into a single json" in prompt.lower() and "resume" in prompt.lower()):
             # CV parsing prompt - return invalid JSON to trigger regex fallback
             return "INVALID_JSON_RESPONSE_TO_TRIGGER_FALLBACK"
         

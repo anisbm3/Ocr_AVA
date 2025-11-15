@@ -133,7 +133,7 @@ def get_qwen_parser(llm_host=None, qwen_model=None):
     if qwen_parser is None:
         try:
             lm_studio_host = llm_host or os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
-            qwen_model = qwen_model or os.getenv("QWEN_MODEL", "qwen2.5-vl-7b")
+            qwen_model = qwen_model or os.getenv("QWEN_MODEL", "qwen3-vl-4b")
 
             print(f"🔧 Connecting to LM Studio at: {lm_studio_host}")
             print("   If running in WSL, make sure LM Studio is running on Windows host")
@@ -165,7 +165,7 @@ def get_job_matcher(llm_host=None, qwen_model=None, scrape_enabled=True, scrape_
         try:
             if llm_client is None:
                 lm_studio_host = llm_host or os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
-                qwen_model = qwen_model or os.getenv("QWEN_MODEL", "qwen2.5-vl-7b")
+                qwen_model = qwen_model or os.getenv("QWEN_MODEL", "qwen3-vl-4b")
                 llm_client = LLMClient(lm_studio_host=lm_studio_host, preferred_model=qwen_model)
             job_matcher = JobMatcherAgent(llm_client, scrape_enabled, scrape_timeout)
             print(f"✅ Job matcher initialized with {qwen_model}")
@@ -260,6 +260,25 @@ def parse_cv_qwen(cv_file, llm_host, qwen_model, max_upload_mb):
                 cv_file_path = temp_file.name
             
             print(f"📄 Processing CV from data URL: {cv_file_path} (MIME: {mime_type})")
+        elif hasattr(cv_file, 'name') and hasattr(cv_file, 'read'):
+            # Handle File-like objects from API calls
+            import tempfile
+            
+            # Get file extension from name or default to .pdf
+            file_name = getattr(cv_file, 'name', 'cv.pdf')
+            ext = os.path.splitext(file_name)[1] or '.pdf'
+            
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
+                if hasattr(cv_file, 'buffer'):
+                    # If it's a multer file buffer
+                    temp_file.write(cv_file.buffer)
+                else:
+                    # Read from file-like object
+                    temp_file.write(cv_file.read())
+                cv_file_path = temp_file.name
+            
+            print(f"📄 Processing CV from File object: {cv_file_path} (name: {file_name})")
         elif hasattr(cv_file, 'name'):
             # Handle file object from Gradio interface
             cv_file_path = cv_file.name
@@ -287,7 +306,8 @@ def parse_cv_qwen(cv_file, llm_host, qwen_model, max_upload_mb):
         resume_data = asyncio.run(parser.extract_and_parse_cv(cv_file_path))
         
         # Clean up temp file if created
-        if isinstance(cv_file, str) and cv_file.startswith('data:'):
+        if (isinstance(cv_file, str) and cv_file.startswith('data:')) or \
+           (hasattr(cv_file, 'name') and hasattr(cv_file, 'read')):
             try:
                 os.unlink(cv_file_path)
             except:
@@ -513,7 +533,7 @@ def create_interface():
     
     # Initialize settings from environment
     default_llm_host = os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
-    default_qwen_model = os.getenv("QWEN_MODEL", "qwen/qwen3-vl-4b")
+    default_qwen_model = os.getenv("QWEN_MODEL", "qwen3-vl-4b")
     default_scrape_enabled = True
     default_scrape_timeout = int(os.getenv("WEB_SCRAPE_TIMEOUT", "10"))
     default_max_upload_mb = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))
@@ -560,7 +580,8 @@ def create_interface():
                     with gr.Column(scale=1):
                         gemini_file_input = gr.File(
                             label="Upload CV/Resume",
-                            file_types=[".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".txt"]
+                            file_types=[".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".txt"],
+                            type="filepath"
                         )
                         gemini_parse_btn = gr.Button("🚀 Extract with Gemini", variant="primary", size="lg")
                     
@@ -585,7 +606,7 @@ def create_interface():
                 gr.Markdown("""
                 ## Extract CV Data using Qwen3VL-4B
                 
-                **Requirements:** LM Studio running on 0.0.0.0:1234 with Qwen3VL-4B model
+                **Requirements:** LM Studio running on localhost:1234 with Qwen3VL-4B model
                 
                 Upload your CV (PDF, DOC, DOCX, or image) and get structured JSON output.
                 """)
@@ -594,7 +615,8 @@ def create_interface():
                     with gr.Column(scale=1):
                         qwen_file_input = gr.File(
                             label="Upload CV/Resume",
-                            file_types=[".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".txt"]
+                            file_types=[],  # Allow any file type for API calls
+                            type="filepath"
                         )
                         qwen_parse_btn = gr.Button("🚀 Extract with Qwen", variant="primary", size="lg")
                     
@@ -699,7 +721,7 @@ def create_interface():
                     
                     qwen_model_input = gr.Dropdown(
                         label="Qwen Model",
-                        choices=["qwen/qwen3-vl-4b", "qwen2.5-vl-7b", "qwen2-vl-7b", "other"],
+                        choices=["qwen3-vl-4b", "qwen2.5-vl-7b", "qwen2-vl-7b", "other"],
                         value=default_qwen_model,
                         allow_custom_value=True
                     )
@@ -939,7 +961,7 @@ def create_interface():
         
         ### 🔧 Setup:
         - **Gemini**: Set `GEMINI_API_KEY` environment variable
-        - **Qwen**: Run LM Studio with Qwen3VL-4B model on 0.0.0.0:1234
+        - **Qwen**: Run LM Studio with Qwen3VL-4B model on localhost:1234
         - **PyMuPDF**: Install with `pip install PyMuPDF` for better PDF extraction
         - **OpenRouter/LMStudio**: For CV review/rewrite/advisor features
         """)
@@ -954,7 +976,7 @@ def create_interface():
 
 if __name__ == "__main__":
     # Get configuration from environment
-    app_host = os.getenv("APP_HOST", "0.0.0.0")
+    app_host = os.getenv("APP_HOST", "localhost")
     app_port = int(os.getenv("APP_PORT", "7861"))
     debug_mode = os.getenv("DEBUG", "false").lower() == "true"
     lm_studio_host = os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")

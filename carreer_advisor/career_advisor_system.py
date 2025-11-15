@@ -13,7 +13,7 @@ OPENROUTER_MODEL = os.getenv("MISTRAL_NAME") or os.getenv("OPENROUTER_MODEL") or
 
 # LMStudio config (fallback)
 LMSTUDIO_URL = os.getenv("LMSTUDIO_URL") or "http://localhost:1234/v1/chat/completions"
-LMSTUDIO_MODEL = os.getenv("MODEL_NAME") or os.getenv("LMSTUDIO_MODEL") or "qwen/qwen3-vl-4b"
+LMSTUDIO_MODEL = os.getenv("MODEL_NAME") or os.getenv("LMSTUDIO_MODEL") or "qwen3-vl-4b"
 
 DEFAULT_TEMPERATURE = float(os.getenv("TEMPERATURE", 0.7))
 DEFAULT_MAX_TOKENS = int(os.getenv("MAX_TOKENS", 8192))  # Increased default to avoid truncation

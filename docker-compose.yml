@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   cv-parser:
@@ -13,7 +13,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - LM_STUDIO_HOST=${LM_STUDIO_HOST:-http://host.docker.internal:1234}
       - QWEN_MODEL=${QWEN_MODEL:-qwen2.5-vl-7b}
-      - APP_HOST=${APP_HOST:-0.0.0.0}
+      - APP_HOST=${APP_HOST:-localhost}
       - APP_PORT=${APP_PORT:-7861}
       - DEBUG=${DEBUG:-false}
       - CV_TEMPLATE_PATH=${CV_TEMPLATE_PATH:-./cv_template_camelCase.json}
@@ -30,7 +30,13 @@ services:
       - cv-parser-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:7861')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://localhost:7861')",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
