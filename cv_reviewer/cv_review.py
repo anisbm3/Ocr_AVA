@@ -147,10 +147,30 @@ def review_cv(cv_json: Union[Dict[str, Any], str],
                 
                 # Try to parse and format as JSON
                 try:
-                    review_json = json.loads(content)
+                    # Clean markdown formatting if present
+                    cleaned_content = content.strip()
+                    if cleaned_content.startswith('```json'):
+                        cleaned_content = cleaned_content.replace('```json', '').strip()
+                    if cleaned_content.startswith('```'):
+                        cleaned_content = cleaned_content.replace('```', '').strip()
+                    if '```' in cleaned_content:
+                        cleaned_content = cleaned_content[:cleaned_content.index('```')].strip()
+                    
+                    review_json = json.loads(cleaned_content)
+                    # Return clean JSON without markdown formatting
                     formatted_content = json.dumps(review_json, ensure_ascii=False, indent=2)
                     return formatted_content + truncation_warning
                 except json.JSONDecodeError:
+                    # Try to extract JSON from the content
+                    try:
+                        json_start = content.find('{')
+                        json_end = content.rfind('}')
+                        if json_start != -1 and json_end != -1 and json_end > json_start:
+                            extracted_json = content[json_start:json_end + 1]
+                            review_json = json.loads(extracted_json)
+                            return json.dumps(review_json, ensure_ascii=False, indent=2) + truncation_warning
+                    except:
+                        pass
                     return content + truncation_warning
             else:
                 print(f"✗ OpenRouter failed with status {response.status_code}")
@@ -218,10 +238,30 @@ def review_cv(cv_json: Union[Dict[str, Any], str],
         
         # Structured output should already be valid JSON, but let's verify and format it nicely
         try:
-            review_json = json.loads(content)
+            # Clean markdown formatting if present
+            cleaned_content = content.strip()
+            if cleaned_content.startswith('```json'):
+                cleaned_content = cleaned_content.replace('```json', '').strip()
+            if cleaned_content.startswith('```'):
+                cleaned_content = cleaned_content.replace('```', '').strip()
+            if '```' in cleaned_content:
+                cleaned_content = cleaned_content[:cleaned_content.index('```')].strip()
+            
+            review_json = json.loads(cleaned_content)
+            # Return clean JSON without markdown formatting
             formatted_content = json.dumps(review_json, ensure_ascii=False, indent=2)
             return formatted_content + truncation_warning
         except json.JSONDecodeError:
+            # Try to extract JSON from the content
+            try:
+                json_start = content.find('{')
+                json_end = content.rfind('}')
+                if json_start != -1 and json_end != -1 and json_end > json_start:
+                    extracted_json = content[json_start:json_end + 1]
+                    review_json = json.loads(extracted_json)
+                    return json.dumps(review_json, ensure_ascii=False, indent=2) + truncation_warning
+            except:
+                pass
             # If parsing fails, return as-is with a warning
             return content + truncation_warning + "\n\n⚠️ Note: Response may not be valid JSON."
 
@@ -361,10 +401,30 @@ def review_cv_multilingual(
                     truncation_warning = "\n\n⚠️ WARNING: Response was truncated due to token limit. Consider increasing max_tokens."
                 
                 try:
-                    review_json = json.loads(content)
+                    # Clean markdown formatting if present
+                    cleaned_content = content.strip()
+                    if cleaned_content.startswith('```json'):
+                        cleaned_content = cleaned_content.replace('```json', '').strip()
+                    if cleaned_content.startswith('```'):
+                        cleaned_content = cleaned_content.replace('```', '').strip()
+                    if '```' in cleaned_content:
+                        cleaned_content = cleaned_content[:cleaned_content.index('```')].strip()
+                    
+                    review_json = json.loads(cleaned_content)
+                    # Return clean JSON without markdown formatting
                     formatted_content = json.dumps(review_json, ensure_ascii=False, indent=2)
                     return formatted_content + truncation_warning
                 except json.JSONDecodeError:
+                    # Try to extract JSON from the content
+                    try:
+                        json_start = content.find('{')
+                        json_end = content.rfind('}')
+                        if json_start != -1 and json_end != -1 and json_end > json_start:
+                            extracted_json = content[json_start:json_end + 1]
+                            review_json = json.loads(extracted_json)
+                            return json.dumps(review_json, ensure_ascii=False, indent=2) + truncation_warning
+                    except:
+                        pass
                     return content + truncation_warning
             else:
                 print(f"✗ OpenRouter failed with status {response.status_code}")
@@ -445,10 +505,30 @@ def review_cv_multilingual(
         
         # Structured output should already be valid JSON
         try:
-            review_json = json.loads(content)
+            # Clean markdown formatting if present
+            cleaned_content = content.strip()
+            if cleaned_content.startswith('```json'):
+                cleaned_content = cleaned_content.replace('```json', '').strip()
+            if cleaned_content.startswith('```'):
+                cleaned_content = cleaned_content.replace('```', '').strip()
+            if '```' in cleaned_content:
+                cleaned_content = cleaned_content[:cleaned_content.index('```')].strip()
+            
+            review_json = json.loads(cleaned_content)
+            # Return clean JSON without markdown formatting
             formatted_content = json.dumps(review_json, ensure_ascii=False, indent=2)
             return formatted_content + truncation_warning
         except json.JSONDecodeError:
+            # Try to extract JSON from the content
+            try:
+                json_start = content.find('{')
+                json_end = content.rfind('}')
+                if json_start != -1 and json_end != -1 and json_end > json_start:
+                    extracted_json = content[json_start:json_end + 1]
+                    review_json = json.loads(extracted_json)
+                    return json.dumps(review_json, ensure_ascii=False, indent=2) + truncation_warning
+            except:
+                pass
             # If parsing fails, return as-is with a warning
             return content + truncation_warning + "\n\n⚠️ Note: Response may not be valid JSON."
 

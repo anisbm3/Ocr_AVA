@@ -39,12 +39,16 @@ from carreer_advisor import (
 from cv_reviewer.cv_review import review_cv, prepare_ats_prompt, prepare_ats_prompt_multilingual, review_cv_multilingual
 from cv_reviewer.cv_rewriter import rewrite_cv
 
+# AI Interviewer
+from ai_interviewer import AIInterviewer
+
 # Initialize components lazily
 gemini_extractor = None
 qwen_agent = None
 llm_client = None
 qwen_parser = None
 job_matcher = None
+ai_interviewer = None
 
 # Define default career paths
 DEFAULT_PATHS = ["Data Science", "Software Engineer", "Product Manager", "DevOps", "Research", "AI/ML Engineer"]
@@ -140,7 +144,7 @@ def get_qwen_parser(llm_host=None, qwen_model=None):
             print("   If using Docker, LM Studio should be accessible via host.docker.internal")
 
             qwen_agent = QwenVisionAgent(lm_studio_host=lm_studio_host)
-            llm_client = LLMClient(lm_studio_host=lm_studio_host, preferred_model=qwen_model)
+            llm_client = LLMClient(lm_studio_host=lm_studio_host, preferred_model=qwen_model)  # Uses LM_STUDIO_TIMEOUT env var (default 600s)
             qwen_parser = CVParserAgent(qwen_agent, llm_client)
             print(f"✅ Qwen parser initialized with {qwen_model}")
         except Exception as e:
@@ -166,7 +170,7 @@ def get_job_matcher(llm_host=None, qwen_model=None, scrape_enabled=True, scrape_
             if llm_client is None:
                 lm_studio_host = llm_host or os.getenv("LM_STUDIO_HOST", "http://host.docker.internal:1234")
                 qwen_model = qwen_model or os.getenv("QWEN_MODEL", "qwen3-vl-4b")
-                llm_client = LLMClient(lm_studio_host=lm_studio_host, preferred_model=qwen_model)
+                llm_client = LLMClient(lm_studio_host=lm_studio_host, preferred_model=qwen_model)  # Uses LM_STUDIO_TIMEOUT env var
             job_matcher = JobMatcherAgent(llm_client, scrape_enabled, scrape_timeout)
             print(f"✅ Job matcher initialized with {qwen_model}")
         except Exception as e:
@@ -525,6 +529,158 @@ def format_list(items):
 
 
 # ============================================================================
+# AI INTERVIEWER
+# ============================================================================
+
+def get_ai_interviewer():
+    """Get or create AI interviewer instance"""
+    global ai_interviewer
+    if ai_interviewer is None:
+        try:
+            ai_interviewer = AIInterviewer()
+            print("✅ AI Interviewer initialized")
+        except Exception as e:
+            print(f"❌ Failed to initialize AI Interviewer: {e}")
+            raise
+    return ai_interviewer
+
+
+def start_interview_fn(cv_json: str, job_desc_json: str) -> tuple:
+    """
+    Initialize interview with CV and job description
+    Returns: (status_message, chat_history)
+    """
+    try:
+        if not cv_json or not job_desc_json:
+            return "❌ Please provide both CV JSON and Job Description JSON", []
+        
+        interviewer = get_ai_interviewer()
+        interviewer.reset_interview()
+        
+        # Load CV and job description
+        if not interviewer.load_cv(cv_json):
+            return "❌ Invalid CV JSON format", []
+        
+        if not interviewer.load_job_description(job_desc_json):
+            return "❌ Invalid Job Description JSON format", []
+        
+        # Get initial greeting
+        initial_response = interviewer.process_response("Hello")
+        
+        chat_history = [
+            ("System", "Interview session started. AI interviewer is ready."),
+            ("AI Interviewer", initial_response)
+        ]
+        
+        return "✅ Interview started successfully! Please respond to begin.", chat_history
+        
+    except Exception as e:
+        return f"❌ Error starting interview: {str(e)}", []
+
+
+def chat_interview_fn(user_message: str, chat_history: list) -> tuple:
+    """
+    Process user message in interview chat
+    Returns: (updated_chat_history, empty_string_for_textbox)
+    """
+    try:
+        if not user_message or user_message.strip() == "":
+            return chat_history, ""
+        
+        interviewer = get_ai_interviewer()
+        
+        # Add user message to history
+        chat_history.append(("User", user_message))
+        
+        # Get AI response
+        ai_response = interviewer.process_response(user_message)
+        
+        # Add AI response to history
+        chat_history.append(("AI Interviewer", ai_response))
+        
+        return chat_history, ""
+        
+    except Exception as e:
+        error_msg = f"❌ Error: {str(e)}"
+        chat_history.append(("System", error_msg))
+        return chat_history, ""
+
+
+def get_interview_status_fn() -> str:
+    """Get current interview status"""
+    try:
+        interviewer = get_ai_interviewer()
+        current_section = interviewer.get_current_section()
+        
+        status = f"""
+## 📊 Interview Status
+
+**Current Section:** {current_section.replace('_', ' ').title()}
+
+**Progress:**
+- Pre-Introduction: {'✅' if interviewer.current_section_index > 0 else '⏳'}
+- Introduction: {'✅' if interviewer.current_section_index > 1 else '⏳' if interviewer.current_section_index == 1 else '⏸️'}
+- HR Questions: {'✅' if interviewer.current_section_index > 2 else '⏳' if interviewer.current_section_index == 2 else '⏸️'}
+- Behavioral Questions: {'✅' if interviewer.current_section_index > 3 else '⏳' if interviewer.current_section_index == 3 else '⏸️'}
+- Technical Questions: {'✅' if interviewer.current_section_index > 4 else '⏳' if interviewer.current_section_index == 4 else '⏸️'}
+- Situational Questions: {'✅' if interviewer.current_section_index > 5 else '⏳' if interviewer.current_section_index == 5 else '⏸️'}
+
+**Total Messages:** {len(interviewer.history)}
+"""
+        return status
+        
+    except Exception as e:
+        return f"❌ Error getting status: {str(e)}"
+
+
+def get_evaluation_report_fn() -> str:
+    """Get evaluation report as formatted markdown"""
+    try:
+        interviewer = get_ai_interviewer()
+        report = interviewer.get_evaluation_report()
+        
+        if not report:
+            return "⏳ No evaluation available yet. Complete the interview first."
+        
+        if "error" in report:
+            return f"❌ Evaluation Error: {report['error']}\n\nRaw: {report.get('raw', 'N/A')}"
+        
+        # Format report
+        md = "# 📋 Interview Evaluation Report\n\n"
+        
+        if isinstance(report, list):
+            for section in report:
+                md += f"## {section.get('section', 'Unknown Section')}\n\n"
+                md += f"**Score:** {section.get('score', 'N/A')}\n\n"
+                md += f"**Strengths:** {section.get('strength', 'N/A')}\n\n"
+                md += f"**Weaknesses:** {section.get('weaknesses', 'N/A')}\n\n"
+                md += f"**Overview:** {section.get('general_overview', 'N/A')}\n\n"
+                md += "---\n\n"
+        else:
+            md += "```json\n" + json.dumps(report, indent=2) + "\n```"
+        
+        return md
+        
+    except Exception as e:
+        return f"❌ Error getting evaluation: {str(e)}"
+
+
+def export_interview_fn() -> tuple:
+    """Export interview session data"""
+    try:
+        interviewer = get_ai_interviewer()
+        session_data = interviewer.export_session()
+        
+        # Format as JSON string
+        json_output = json.dumps(session_data, indent=2, ensure_ascii=False)
+        
+        return json_output, "✅ Session data exported successfully"
+        
+    except Exception as e:
+        return "", f"❌ Error exporting session: {str(e)}"
+
+
+# ============================================================================
 # GRADIO INTERFACE
 # ============================================================================
 
@@ -540,7 +696,7 @@ def create_interface():
     default_cv_template_path = os.getenv("CV_TEMPLATE_PATH", "./cv_template_camelCase.json")
     default_job_desc_path = os.getenv("JOB_DESCRIPTIONS_PATH", "./job_descriptions.json")
     
-    with gr.Blocks(title="AI-Powered CV Tools: Parser, Matcher, Reviewer & Advisor", theme=gr.themes.Soft()) as app:
+    with gr.Blocks(title="AI-Powered CV Tools: Parser, Matcher, Reviewer, Advisor & Interviewer", theme=gr.themes.Soft()) as app:
         
         # State management for settings
         llm_host_state = gr.State(default_llm_host)
@@ -552,7 +708,7 @@ def create_interface():
         job_desc_path_state = gr.State(default_job_desc_path)
         
         gr.Markdown("""
-        # 🎯 AI-Powered CV Tools: Parser, Matcher, Reviewer & Advisor
+        # 🎯 AI-Powered CV Tools: Parser, Matcher, Reviewer, Advisor & Interviewer
         
         **Comprehensive CV processing suite:**
         - 🌟 **CV Extraction**: Google Gemini & Qwen Vision for accurate parsing
@@ -561,6 +717,7 @@ def create_interface():
         - ✍️ **CV Rewrite**: Automatic optimization with strong action verbs
         - 🎓 **Career Advisor**: Personalized guidance and learning paths
         - 🔄 **Feedback System**: Iterative improvement of advice
+        - 🎤 **AI Interviewer**: Text-based mock interviews with evaluation
         
         ---
         """)
@@ -737,7 +894,7 @@ def create_interface():
                     def test_llm_connection(host, model):
                         try:
                             # Test connection by initializing LLM client
-                            test_client = LLMClient(lm_studio_host=host, preferred_model=model)
+                            test_client = LLMClient(lm_studio_host=host, preferred_model=model)  # Uses LM_STUDIO_TIMEOUT env var
                             # Try a simple request
                             import asyncio
                             response = asyncio.run(test_client.generate("Hello", max_tokens=10))
@@ -945,6 +1102,112 @@ def create_interface():
                     inputs=[original_output_feedback, step_identifier_feedback, feedback_json_feedback, temp_feedback, max_tokens_feedback],
                     outputs=[feedback_output]
                 )
+            
+            # ====== TAB 10: AI INTERVIEWER ======
+            with gr.Tab("🎤 AI Interviewer"):
+                gr.Markdown("""
+                ## AI-Powered Voice Interview
+                
+                Conduct a comprehensive interview with AI-powered questions covering:
+                - Introduction & HR Questions
+                - Behavioral Questions
+                - Technical Questions
+                - Situational/Problem-based Questions
+                
+                **Requirements:** GROQ_API_KEY environment variable must be set
+                """)
+                
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        gr.Markdown("### 📝 Setup")
+                        
+                        interview_cv_json = gr.Textbox(
+                            lines=10,
+                            label="CV JSON",
+                            placeholder='{"personalInformation": {...}, "skills": [...], ...}'
+                        )
+                        
+                        interview_job_desc = gr.Textbox(
+                            lines=10,
+                            label="Job Description JSON",
+                            placeholder='{"title": "Software Engineer", "requirements": [...], ...}'
+                        )
+                        
+                        start_interview_btn = gr.Button("🚀 Start Interview", variant="primary", size="lg")
+                        start_status = gr.Textbox(label="Status", interactive=False)
+                    
+                    with gr.Column(scale=2):
+                        gr.Markdown("### 💬 Interview Chat")
+                        
+                        chatbot = gr.Chatbot(
+                            label="Interview Conversation",
+                            height=400,
+                            type="messages"
+                        )
+                        
+                        with gr.Row():
+                            user_input = gr.Textbox(
+                                label="Your Response",
+                                placeholder="Type your answer here...",
+                                scale=4
+                            )
+                            send_btn = gr.Button("Send", variant="primary", scale=1)
+                        
+                        gr.Markdown("### 📊 Interview Progress")
+                        interview_status = gr.Markdown("Not started")
+                        refresh_status_btn = gr.Button("🔄 Refresh Status", size="sm")
+                
+                with gr.Row():
+                    with gr.Column():
+                        gr.Markdown("### 📋 Evaluation Report")
+                        evaluation_display = gr.Markdown("Complete the interview to see your evaluation")
+                        get_evaluation_btn = gr.Button("📊 Get Evaluation Report")
+                    
+                    with gr.Column():
+                        gr.Markdown("### 💾 Export Session")
+                        export_output = gr.Code(label="Session Data (JSON)", language="json", lines=10)
+                        export_status = gr.Textbox(label="Export Status", interactive=False)
+                        export_btn = gr.Button("💾 Export Interview Data")
+                
+                # Event handlers
+                start_interview_btn.click(
+                    fn=start_interview_fn,
+                    inputs=[interview_cv_json, interview_job_desc],
+                    outputs=[start_status, chatbot]
+                )
+                
+                def handle_send(user_msg, history):
+                    return chat_interview_fn(user_msg, history)
+                
+                send_btn.click(
+                    fn=handle_send,
+                    inputs=[user_input, chatbot],
+                    outputs=[chatbot, user_input]
+                )
+                
+                user_input.submit(
+                    fn=handle_send,
+                    inputs=[user_input, chatbot],
+                    outputs=[chatbot, user_input]
+                )
+                
+                refresh_status_btn.click(
+                    fn=get_interview_status_fn,
+                    inputs=[],
+                    outputs=[interview_status]
+                )
+                
+                get_evaluation_btn.click(
+                    fn=get_evaluation_report_fn,
+                    inputs=[],
+                    outputs=[evaluation_display]
+                )
+                
+                export_btn.click(
+                    fn=export_interview_fn,
+                    inputs=[],
+                    outputs=[export_output, export_status]
+                )
         
         gr.Markdown("""
         ---
@@ -958,12 +1221,14 @@ def create_interface():
         6. **Rewrite CV**: Optimize your CV with the Rewriter tab
         7. **Get Career Advice**: Use Career Advisor for personalized guidance
         8. **Apply Feedback**: Refine learning paths with the Feedback tab
+        9. **AI Interview**: Conduct mock interviews with text-based AI interviewer
         
         ### 🔧 Setup:
         - **Gemini**: Set `GEMINI_API_KEY` environment variable
         - **Qwen**: Run LM Studio with Qwen3VL-4B model on localhost:1234
         - **PyMuPDF**: Install with `pip install PyMuPDF` for better PDF extraction
         - **OpenRouter/LMStudio**: For CV review/rewrite/advisor features
+        - **AI Interviewer**: Set `GROQ_API_KEY` environment variable for Groq API access
         """)
     
     return app
@@ -995,6 +1260,7 @@ if __name__ == "__main__":
       - CV rewriting with strong action verbs
       - Career advisor with personalized guidance
       - Feedback system for iterative improvement
+      - AI Interviewer with multi-section text interviews
       - Beautiful UI with structured output
 
     Configuration:
@@ -1002,10 +1268,14 @@ if __name__ == "__main__":
       - LM Studio: {lm_studio_host}
       - Qwen Model: {qwen_model}
       - Debug Mode: {debug_mode}
+      - AI Interviewer: {"✅ Enabled" if os.getenv("GROQ_API_KEY") else "❌ Disabled (GROQ_API_KEY not set)"}
 
     OpenAI-Compatible Endpoints Used:
       - GET  /v1/models (model listing)
       - POST /v1/chat/completions (text generation & vision)
+    
+    Groq API Used:
+      - POST /v1/chat/completions (AI Interviewer)
 
     ======================================================================
     """)

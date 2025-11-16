@@ -5,6 +5,10 @@ python-dotenv
 chromadb
 rfc3987
 
+# AI Interviewer
+groq
+fastrtc
+
 # AI Vision (Qwen Vision Agent)
 openai==1.54.3
 Pillow>=8.0,<11.0

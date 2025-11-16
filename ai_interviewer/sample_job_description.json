@@ -1,0 +1,41 @@
+{
+  "title": "Senior Software Engineer",
+  "company": "Tech Corp",
+  "location": "Remote",
+  "type": "Full-time",
+  "description": "We are seeking a talented Senior Software Engineer to join our growing team. You will be responsible for designing, developing, and maintaining scalable software solutions.",
+  "requirements": [
+    "5+ years of experience in software development",
+    "Strong proficiency in Python, JavaScript, or Java",
+    "Experience with cloud platforms (AWS, Azure, or GCP)",
+    "Knowledge of microservices architecture",
+    "Excellent problem-solving and communication skills",
+    "Bachelor's degree in Computer Science or related field"
+  ],
+  "responsibilities": [
+    "Design and implement scalable software solutions",
+    "Collaborate with cross-functional teams",
+    "Mentor junior developers",
+    "Participate in code reviews and technical discussions",
+    "Contribute to architectural decisions"
+  ],
+  "skills": [
+    "Python",
+    "JavaScript",
+    "React",
+    "Node.js",
+    "Docker",
+    "Kubernetes",
+    "AWS",
+    "RESTful APIs",
+    "Git",
+    "Agile/Scrum"
+  ],
+  "benefits": [
+    "Competitive salary",
+    "Health insurance",
+    "Remote work flexibility",
+    "Professional development opportunities",
+    "401(k) matching"
+  ]
+}

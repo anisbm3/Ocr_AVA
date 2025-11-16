@@ -4,6 +4,7 @@ General-purpose text generation for any task: CV parsing, job matching, analysis
 """
 import logging
 import json
+import os
 import requests
 
 logger = logging.getLogger(__name__)
@@ -16,24 +17,26 @@ class LLMClient:
     Use for: CV parsing, job matching, skill analysis, text generation, etc.
     """
 
-    def __init__(self, lm_studio_host: str = "http://localhost:1234", preferred_model: str = "qwen2.5-vl-7b"):
+    def __init__(self, lm_studio_host: str = "http://localhost:1234", preferred_model: str = "qwen2.5-vl-7b", timeout: int = None):
         """
         Initialize LLM Client
         
         Args:
             lm_studio_host: LM Studio server URL
             preferred_model: Preferred model name (defaults to qwen2.5-vl-7b)
+            timeout: Request timeout in seconds (default: 600 = 10 minutes, or LM_STUDIO_TIMEOUT env var)
         """
         self.lm_studio_host = lm_studio_host
         self.lm_studio_url = f"{lm_studio_host}/v1/chat/completions"
         self.preferred_model = preferred_model
+        self.timeout = timeout or int(os.getenv("LM_STUDIO_TIMEOUT", "600"))  # Default 10 minutes, configurable via env
         self.provider = None
         self.available_models = []
         self.active_model = None
 
         # Check LM Studio connection
         try:
-            response = requests.get(f"{lm_studio_host}/v1/models", timeout=2)
+            response = requests.get(f"{lm_studio_host}/v1/models", timeout=5)  # Quick check, 5 seconds
             if response.status_code == 200:
                 self.provider = "lm_studio"
                 models = response.json().get('data', [])
@@ -105,7 +108,7 @@ class LLMClient:
                 "stream": False
             }
             
-            response = requests.post(self.lm_studio_url, json=payload, timeout=300)
+            response = requests.post(self.lm_studio_url, json=payload, timeout=self.timeout)
             response.raise_for_status()
             
             result = response.json()
@@ -115,7 +118,10 @@ class LLMClient:
             return generated_text
             
         except requests.exceptions.Timeout:
-            logger.error("❌ LM Studio request timed out")
+            logger.error(f"❌ LM Studio request timed out after {self.timeout} seconds")
+            logger.info(f"   LM Studio URL: {self.lm_studio_url}")
+            logger.info(f"   Model: {model_name}")
+            logger.info(f"   Prompt length: {len(prompt)} characters")
             return self._mock_response(prompt)
         except requests.exceptions.RequestException as e:
             logger.error(f"❌ LM Studio API error: {e}")
