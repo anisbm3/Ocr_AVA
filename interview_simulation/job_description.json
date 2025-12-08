@@ -1,0 +1,31 @@
+{
+  "title": "AI Engineer",
+  "company": "FutureTech",
+  "location": "Paris, France",
+  "description": "Nous recherchons un ingénieur IA pour développer et déployer des systèmes intelligents utilisant des outils ML modernes. Le candidat idéal aura une solide expérience en Python, machine learning et développement d'APIs.",
+  "requirements": [
+    "Python",
+    "Deep Learning",
+    "API Development",
+    "Docker",
+    "Machine Learning",
+    "Data Science"
+  ],
+  "required_skills": [
+    "Python avancé",
+    "Frameworks ML (TensorFlow, PyTorch)",
+    "Développement d'APIs REST",
+    "Conteneurisation Docker",
+    "Base de données SQL/NoSQL",
+    "Git et CI/CD"
+  ],
+  "responsibilities": [
+    "Développer des modèles de machine learning",
+    "Créer et maintenir des APIs pour les modèles ML",
+    "Déployer des solutions ML en production",
+    "Collaborer avec l'équipe data science",
+    "Optimiser les performances des modèles",
+    "Documenter les solutions techniques"
+  ]
+}
+

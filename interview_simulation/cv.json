@@ -1,0 +1,45 @@
+{
+  "name": "[REDACTED]",
+  "email": "[REDACTED]",
+  "phone": "[REDACTED]",
+  "location": "[REDACTED]",
+  "skills": [
+    "Python",
+    "Django",
+    "Machine Learning",
+    "Data Analysis",
+    "SQL",
+    "JavaScript",
+    "React",
+    "Git",
+    "Docker"
+  ],
+  "education": "Bachelor in Computer Science - ESPRIT",
+  "experience": [
+    {
+      "role": "Data Science Intern",
+      "company": "Tech4Good",
+      "duration": "3 months",
+      "description": "Développement de modèles de machine learning pour l'analyse de données"
+    },
+    {
+      "role": "Web Developer",
+      "company": "Freelance",
+      "duration": "6 months",
+      "description": "Développement d'applications web avec Django et React"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Système de recommandation",
+      "technologies": ["Python", "Machine Learning", "Pandas"],
+      "description": "Application de recommandation basée sur l'apprentissage automatique"
+    },
+    {
+      "name": "Application e-commerce",
+      "technologies": ["Django", "React", "PostgreSQL"],
+      "description": "Plateforme e-commerce complète avec gestion des commandes et paiements"
+    }
+  ]
+}
+
