@@ -39,8 +39,17 @@ from carreer_advisor import (
 from cv_reviewer.cv_review import review_cv, prepare_ats_prompt, prepare_ats_prompt_multilingual, review_cv_multilingual
 from cv_reviewer.cv_rewriter import rewrite_cv
 
-# AI Interviewer
+# AI Interviewer (Text-based)
 from ai_interviewer import AIInterviewer
+
+# Interview Simulation (Voice-based with FastRTC)
+try:
+    from interview_simulation import InterviewSimulator
+    from fastrtc import ReplyOnPause, Stream, AlgoOptions, SileroVadOptions
+    FASTRTC_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ FastRTC not available: {e}")
+    FASTRTC_AVAILABLE = False
 
 # Initialize components lazily
 gemini_extractor = None
@@ -49,6 +58,8 @@ llm_client = None
 qwen_parser = None
 job_matcher = None
 ai_interviewer = None
+interview_simulator = None
+fastrtc_stream = None
 
 # Define default career paths
 DEFAULT_PATHS = ["Data Science", "Software Engineer", "Product Manager", "DevOps", "Research", "AI/ML Engineer"]
@@ -681,6 +692,147 @@ def export_interview_fn() -> tuple:
 
 
 # ============================================================================
+# VOICE INTERVIEW SIMULATION (FastRTC)
+# ============================================================================
+
+def get_interview_simulator(cv_json: str = None, job_desc_json: str = None):
+    """Get or create Voice Interview Simulator instance"""
+    global interview_simulator
+    
+    if not FASTRTC_AVAILABLE:
+        return None
+    
+    try:
+        # Save CV and job description to temp files if provided
+        base_dir = os.path.dirname(__file__)
+        sim_dir = os.path.join(base_dir, "interview_simulation")
+        
+        if cv_json:
+            cv_path = os.path.join(sim_dir, "cv.json")
+            with open(cv_path, "w", encoding="utf-8") as f:
+                if isinstance(cv_json, str):
+                    try:
+                        cv_data = json.loads(cv_json)
+                        json.dump(cv_data, f, ensure_ascii=False, indent=2)
+                    except json.JSONDecodeError:
+                        json.dump({"raw": cv_json}, f, ensure_ascii=False, indent=2)
+                else:
+                    json.dump(cv_json, f, ensure_ascii=False, indent=2)
+        
+        if job_desc_json:
+            job_path = os.path.join(sim_dir, "job_description.json")
+            with open(job_path, "w", encoding="utf-8") as f:
+                if isinstance(job_desc_json, str):
+                    try:
+                        job_data = json.loads(job_desc_json)
+                        json.dump(job_data, f, ensure_ascii=False, indent=2)
+                    except json.JSONDecodeError:
+                        json.dump({"raw": job_desc_json}, f, ensure_ascii=False, indent=2)
+                else:
+                    json.dump(job_desc_json, f, ensure_ascii=False, indent=2)
+        
+        # Create new simulator instance
+        interview_simulator = InterviewSimulator()
+        print("✅ Voice Interview Simulator initialized")
+        return interview_simulator
+        
+    except Exception as e:
+        print(f"❌ Failed to initialize Voice Interview Simulator: {e}")
+        return None
+
+
+def create_voice_interview_stream(cv_json: str = None, job_desc_json: str = None):
+    """Create FastRTC stream for voice interview"""
+    if not FASTRTC_AVAILABLE:
+        return None, "❌ FastRTC is not available. Please install fastrtc package."
+    
+    try:
+        simulator = get_interview_simulator(cv_json, job_desc_json)
+        if simulator is None:
+            return None, "❌ Failed to initialize interview simulator"
+        
+        stream = Stream(
+            ReplyOnPause(
+                simulator.process_audio,
+                algo_options=AlgoOptions(
+                    audio_chunk_duration=1.5,
+                    started_talking_threshold=0.2,
+                    speech_threshold=0.1
+                ),
+                can_interrupt=False,
+                model_options=SileroVadOptions(
+                    threshold=0.5,
+                    min_speech_duration_ms=250,
+                    min_silence_duration_ms=2000
+                )
+            ),
+            modality="audio",
+            mode="send-receive"
+        )
+        
+        return stream, "✅ Voice interview ready! Click Start to begin."
+        
+    except Exception as e:
+        return None, f"❌ Error creating voice stream: {str(e)}"
+
+
+def get_voice_interview_report():
+    """Get the evaluation report from voice interview"""
+    try:
+        base_dir = os.path.dirname(__file__)
+        report_path = os.path.join(base_dir, "interview_simulation", "report_interview.json")
+        
+        if os.path.exists(report_path):
+            with open(report_path, "r", encoding="utf-8") as f:
+                report = json.load(f)
+            
+            if not report:
+                return "⏳ No evaluation available yet. Complete the interview first."
+            
+            # Format report
+            md = "# 📋 Voice Interview Evaluation Report\n\n"
+            
+            if isinstance(report, list):
+                for section in report:
+                    md += f"## {section.get('section', 'Unknown Section')}\n\n"
+                    md += f"**Score:** {section.get('score', 'N/A')}\n\n"
+                    md += f"**Strengths:** {section.get('strength', 'N/A')}\n\n"
+                    md += f"**Weaknesses:** {section.get('weaknesses', 'N/A')}\n\n"
+                    md += f"**Overview:** {section.get('general overview', section.get('general_overview', 'N/A'))}\n\n"
+                    md += "---\n\n"
+            else:
+                md += "```json\n" + json.dumps(report, indent=2) + "\n```"
+            
+            return md
+        else:
+            return "⏳ No evaluation available yet. Complete the interview first."
+            
+    except Exception as e:
+        return f"❌ Error getting evaluation: {str(e)}"
+
+
+def get_voice_interview_history():
+    """Get conversation history from voice interview"""
+    try:
+        base_dir = os.path.dirname(__file__)
+        history_path = os.path.join(base_dir, "interview_simulation", "conversation_history.json")
+        
+        if os.path.exists(history_path):
+            with open(history_path, "r", encoding="utf-8") as f:
+                history = json.load(f)
+            
+            if not history:
+                return "No conversation history yet."
+            
+            return json.dumps(history, indent=2, ensure_ascii=False)
+        else:
+            return "No conversation history file found."
+            
+    except Exception as e:
+        return f"❌ Error getting history: {str(e)}"
+
+
+# ============================================================================
 # GRADIO INTERFACE
 # ============================================================================
 
@@ -1208,6 +1360,124 @@ def create_interface():
                     inputs=[],
                     outputs=[export_output, export_status]
                 )
+            
+            # ====== TAB 11: VOICE INTERVIEW SIMULATION (FastRTC) ======
+            with gr.Tab("🎙️ Voice Interview (FastRTC)"):
+                gr.Markdown("""
+                ## 🎙️ Voice-Based Interview Simulation
+                
+                Conduct a **real-time voice interview** with AI-powered speech recognition and synthesis.
+                
+                **Features:**
+                - 🎤 Speech-to-Text: Speak naturally, AI transcribes your responses
+                - 🔊 Text-to-Speech: AI interviewer speaks questions aloud
+                - 📊 Multi-section interview: HR, Behavioral, Technical, Situational
+                - 📋 Automatic evaluation report generation
+                
+                **Requirements:** 
+                - `GROQ_API_KEY` environment variable must be set
+                - Microphone access in your browser
+                - FastRTC package installed
+                """)
+                
+                if FASTRTC_AVAILABLE:
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            gr.Markdown("### 📝 Interview Setup")
+                            
+                            voice_cv_json = gr.Textbox(
+                                lines=8,
+                                label="CV JSON (Optional)",
+                                placeholder='{"personalInformation": {...}, "skills": [...], ...}',
+                                info="Paste your CV JSON or leave empty to use default"
+                            )
+                            
+                            voice_job_desc = gr.Textbox(
+                                lines=8,
+                                label="Job Description JSON (Optional)",
+                                placeholder='{"title": "Software Engineer", "requirements": [...], ...}',
+                                info="Paste job description or leave empty to use default"
+                            )
+                            
+                            setup_voice_btn = gr.Button("🎯 Setup Interview", variant="primary", size="lg")
+                            voice_setup_status = gr.Textbox(label="Setup Status", interactive=False, value="Click 'Setup Interview' to initialize")
+                            
+                            gr.Markdown("### 📋 Evaluation Report")
+                            voice_report_display = gr.Markdown("Complete the interview to see your evaluation")
+                            get_voice_report_btn = gr.Button("📊 Get Evaluation Report")
+                            
+                            gr.Markdown("### 💬 Conversation History")
+                            voice_history_display = gr.Code(label="History (JSON)", language="json", lines=8)
+                            get_voice_history_btn = gr.Button("🔄 Refresh History")
+                        
+                        with gr.Column(scale=2):
+                            gr.Markdown("### 🎤 Voice Interview")
+                            gr.Markdown("""
+                            **Instructions:**
+                            1. Click **Setup Interview** to initialize
+                            2. Allow microphone access when prompted
+                            3. Click **Start** to begin the interview
+                            4. Speak clearly into your microphone
+                            5. Wait for the AI to respond
+                            6. The interview will progress automatically through sections
+                            """)
+                            
+                            # Create a placeholder for the voice stream
+                            voice_interview_container = gr.HTML(
+                                value="""
+                                <div style="padding: 20px; background: #f0f0f0; border-radius: 10px; text-align: center;">
+                                    <h3>🎙️ Voice Interview Interface</h3>
+                                    <p>Click <strong>Setup Interview</strong> to initialize the voice interview system.</p>
+                                    <p>After setup, use the audio controls that appear here to start the interview.</p>
+                                </div>
+                                """,
+                                label="Voice Interview"
+                            )
+                    
+                    # Create the stream dynamically
+                    @gr.render(inputs=[voice_cv_json, voice_job_desc], triggers=[setup_voice_btn.click])
+                    def render_voice_stream(cv_json, job_desc):
+                        stream, status = create_voice_interview_stream(cv_json, job_desc)
+                        if stream:
+                            gr.Markdown(f"**Status:** {status}")
+                            stream.ui.render()
+                        else:
+                            gr.Markdown(f"**Error:** {status}")
+                    
+                    # Event handlers
+                    setup_voice_btn.click(
+                        fn=lambda cv, job: create_voice_interview_stream(cv, job)[1],
+                        inputs=[voice_cv_json, voice_job_desc],
+                        outputs=[voice_setup_status]
+                    )
+                    
+                    get_voice_report_btn.click(
+                        fn=get_voice_interview_report,
+                        inputs=[],
+                        outputs=[voice_report_display]
+                    )
+                    
+                    get_voice_history_btn.click(
+                        fn=get_voice_interview_history,
+                        inputs=[],
+                        outputs=[voice_history_display]
+                    )
+                else:
+                    gr.Markdown("""
+                    ## ⚠️ FastRTC Not Available
+                    
+                    Voice interview simulation requires the FastRTC package.
+                    
+                    **To enable voice interviews:**
+                    
+                    ```bash
+                    pip install fastrtc
+                    ```
+                    
+                    Then restart the application.
+                    
+                    **Alternative:** Use the **AI Interviewer** tab for text-based interviews.
+                    """)
         
         gr.Markdown("""
         ---
@@ -1222,10 +1492,13 @@ def create_interface():
         7. **Get Career Advice**: Use Career Advisor for personalized guidance
         8. **Apply Feedback**: Refine learning paths with the Feedback tab
         9. **AI Interview**: Conduct mock interviews with text-based AI interviewer
+        10. **Voice Interview**: Use FastRTC for real-time voice-based interviews
         
         ### 🔧 Setup:
         - **Gemini**: Set `GEMINI_API_KEY` environment variable
         - **Qwen**: Run LM Studio with Qwen3VL-4B model on localhost:1234
+        - **AI Interviewer**: Set `GROQ_API_KEY` environment variable
+        - **Voice Interview**: Install FastRTC package and set `GROQ_API_KEY`
         - **PyMuPDF**: Install with `pip install PyMuPDF` for better PDF extraction
         - **OpenRouter/LMStudio**: For CV review/rewrite/advisor features
         - **AI Interviewer**: Set `GROQ_API_KEY` environment variable for Groq API access
@@ -1261,6 +1534,7 @@ if __name__ == "__main__":
       - Career advisor with personalized guidance
       - Feedback system for iterative improvement
       - AI Interviewer with multi-section text interviews
+      - Voice Interview with FastRTC (real-time speech)
       - Beautiful UI with structured output
 
     Configuration:
@@ -1269,6 +1543,7 @@ if __name__ == "__main__":
       - Qwen Model: {qwen_model}
       - Debug Mode: {debug_mode}
       - AI Interviewer: {"✅ Enabled" if os.getenv("GROQ_API_KEY") else "❌ Disabled (GROQ_API_KEY not set)"}
+      - Voice Interview (FastRTC): {"✅ Available" if FASTRTC_AVAILABLE else "❌ Not available (install fastrtc)"}
 
     OpenAI-Compatible Endpoints Used:
       - GET  /v1/models (model listing)
