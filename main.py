@@ -51,6 +51,9 @@ except ImportError as e:
     print(f"⚠️ FastRTC not available: {e}")
     FASTRTC_AVAILABLE = False
 
+# Voice Interview API
+from voice_interview_api import create_voice_interview_api
+
 # Initialize components lazily
 gemini_extractor = None
 qwen_agent = None
@@ -695,6 +698,59 @@ def export_interview_fn() -> tuple:
 # VOICE INTERVIEW SIMULATION (FastRTC)
 # ============================================================================
 
+def save_interview_data(cv_json: str = None, job_desc_json: str = None) -> str:
+    """
+    Save CV and job description to temp files for the interview.
+    This is called via the Gradio API from the web frontend.
+    Does NOT create the FastRTC stream - that happens in the Gradio UI.
+    """
+    try:
+        # Save CV and job description to temp files if provided
+        base_dir = os.path.dirname(__file__)
+        sim_dir = os.path.join(base_dir, "interview_simulation")
+        os.makedirs(sim_dir, exist_ok=True)
+        
+        if cv_json:
+            cv_path = os.path.join(sim_dir, "cv.json")
+            with open(cv_path, "w", encoding="utf-8") as f:
+                if isinstance(cv_json, str):
+                    try:
+                        cv_data = json.loads(cv_json)
+                        json.dump(cv_data, f, ensure_ascii=False, indent=2)
+                    except json.JSONDecodeError:
+                        json.dump({"raw": cv_json}, f, ensure_ascii=False, indent=2)
+                else:
+                    json.dump(cv_json, f, ensure_ascii=False, indent=2)
+        
+        if job_desc_json:
+            job_path = os.path.join(sim_dir, "job_description.json")
+            with open(job_path, "w", encoding="utf-8") as f:
+                if isinstance(job_desc_json, str):
+                    try:
+                        job_data = json.loads(job_desc_json)
+                        json.dump(job_data, f, ensure_ascii=False, indent=2)
+                    except json.JSONDecodeError:
+                        json.dump({"raw": job_desc_json}, f, ensure_ascii=False, indent=2)
+                else:
+                    json.dump(job_desc_json, f, ensure_ascii=False, indent=2)
+        
+        # Clear previous session files
+        history_file = os.path.join(sim_dir, "conversation_history.json")
+        report_file = os.path.join(sim_dir, "report_interview.json")
+        
+        with open(history_file, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        with open(report_file, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        
+        if FASTRTC_AVAILABLE:
+            return "✅ Interview data saved! Open the Voice Interview tab in Gradio to start."
+        else:
+            return "⚠️ Interview data saved, but FastRTC is not available. Please install fastrtc package."
+        
+    except Exception as e:
+        return f"❌ Error saving interview data: {str(e)}"
+
 def get_interview_simulator(cv_json: str = None, job_desc_json: str = None):
     """Get or create Voice Interview Simulator instance"""
     global interview_simulator
@@ -773,7 +829,25 @@ def create_voice_interview_stream(cv_json: str = None, job_desc_json: str = None
         return stream, "✅ Voice interview ready! Click Start to begin."
         
     except Exception as e:
-        return None, f"❌ Error creating voice stream: {str(e)}"
+        # Provide actionable guidance for known FastRTC/WebRTC compatibility issues
+        err_msg = str(e)
+        if "'WebRTC' object has no attribute '_id'" in err_msg or "WebRTC object has no attribute" in err_msg:
+            guidance = (
+                "FastRTC WebRTC compatibility issue detected. This often means the installed 'fastrtc' "
+                "package version is incompatible with the current code. Try upgrading/downgrading 'fastrtc' "
+                "or reinstalling dependencies. For example:\n\n"
+                "    pip install --upgrade fastrtc\n"
+                "    # or install a specific version if needed:\n"
+                "    pip install fastrtc==0.6.2\n\n"
+                "If the problem persists, ensure your Python environment matches the project's requirements and "
+                "check the fastrtc release notes or issue tracker for breaking changes."
+            )
+            # Log full exception for debugging
+            print(f"❌ Error creating voice stream (WebRTC attribute issue): {err_msg}")
+            return None, f"❌ Error creating voice stream: {err_msg}\n\n{guidance}"
+        else:
+            print(f"❌ Error creating voice stream: {err_msg}")
+            return None, f"❌ Error creating voice stream: {err_msg}"
 
 
 def get_voice_interview_report():
@@ -1434,9 +1508,11 @@ def create_interface():
                                 label="Voice Interview"
                             )
                     
-                    # Create the stream dynamically
+                    # Create the stream dynamically (only in Gradio UI, not via API)
                     @gr.render(inputs=[voice_cv_json, voice_job_desc], triggers=[setup_voice_btn.click])
                     def render_voice_stream(cv_json, job_desc):
+                        # Only create stream if we have valid data from UI interaction
+                        # API calls will use save_interview_data instead
                         stream, status = create_voice_interview_stream(cv_json, job_desc)
                         if stream:
                             gr.Markdown(f"**Status:** {status}")
@@ -1444,23 +1520,26 @@ def create_interface():
                         else:
                             gr.Markdown(f"**Error:** {status}")
                     
-                    # Event handlers
+                    # Event handlers - use save_interview_data for API compatibility
                     setup_voice_btn.click(
-                        fn=lambda cv, job: create_voice_interview_stream(cv, job)[1],
+                        fn=save_interview_data,
                         inputs=[voice_cv_json, voice_job_desc],
-                        outputs=[voice_setup_status]
+                        outputs=[voice_setup_status],
+                        api_name="setup_voice_interview"
                     )
                     
                     get_voice_report_btn.click(
                         fn=get_voice_interview_report,
                         inputs=[],
-                        outputs=[voice_report_display]
+                        outputs=[voice_report_display],
+                        api_name="get_voice_interview_report"
                     )
                     
                     get_voice_history_btn.click(
                         fn=get_voice_interview_history,
                         inputs=[],
-                        outputs=[voice_history_display]
+                        outputs=[voice_history_display],
+                        api_name="get_voice_interview_history"
                     )
                 else:
                     gr.Markdown("""
@@ -1557,6 +1636,10 @@ if __name__ == "__main__":
 
     app = create_interface()
 
+    # Mount the voice interview API routes to the underlying FastAPI app
+    voice_api = create_voice_interview_api()
+    app.app.mount("/api", voice_api)
+
     # Add CORS headers for frontend integration
     @app.app.middleware("http")
     async def add_cors_headers(request, call_next):
@@ -1566,6 +1649,66 @@ if __name__ == "__main__":
         response.headers["Access-Control-Allow-Headers"] = "*"
         response.headers["Access-Control-Allow-Credentials"] = "true"
         return response
+
+    # Add JavaScript to auto-populate fields from URL parameters
+    auto_populate_js = gr.HTML("""
+    <script>
+    function getUrlParameter(name) {
+        name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+
+    function autoPopulateFields() {
+        // Wait for Gradio to load
+        setTimeout(function() {
+            const cvParam = getUrlParameter('cv');
+            const jobParam = getUrlParameter('job');
+
+            if (cvParam) {
+                // Find CV textarea and set value
+                const cvTextareas = document.querySelectorAll('textarea');
+                for (let textarea of cvTextareas) {
+                    if (textarea.placeholder && textarea.placeholder.includes('CV JSON')) {
+                        textarea.value = cvParam;
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        break;
+                    }
+                }
+            }
+
+            if (jobParam) {
+                // Find job description textarea and set value
+                const jobTextareas = document.querySelectorAll('textarea');
+                for (let textarea of jobTextareas) {
+                    if (textarea.placeholder && textarea.placeholder.includes('Job Description')) {
+                        textarea.value = jobParam;
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        break;
+                    }
+                }
+            }
+
+            // Auto-click setup button if both parameters are present
+            if (cvParam && jobParam) {
+                setTimeout(function() {
+                    const buttons = document.querySelectorAll('button');
+                    for (let btn of buttons) {
+                        if (btn.textContent && btn.textContent.includes('Setup Interview')) {
+                            btn.click();
+                            break;
+                        }
+                    }
+                }, 1000);
+            }
+        }, 2000); // Wait 2 seconds for Gradio to fully load
+    }
+
+    // Run on page load
+    window.addEventListener('load', autoPopulateFields);
+    </script>
+    """)
 
     app.launch(
         server_name=app_host,
