@@ -143,6 +143,10 @@ class InterviewSimulator:
     
     def _evaluate(self) -> dict:
         """Generate an evaluation report based on the conversation history."""
+        print("=" * 50)
+        print("STARTING EVALUATION REPORT GENERATION")
+        print("=" * 50)
+        
         evaluation_prompt = (
             f"Based on the following conversation history, evaluate the candidate's "
             f"performance in the interview. Provide feedback on strengths and areas "
@@ -154,27 +158,35 @@ class InterviewSimulator:
         )
 
         try:
+            print(f"Sending evaluation request to Groq with {len(self.history)} conversation entries...")
             response = self.client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[{"role": "user", "content": evaluation_prompt}],
-                max_tokens=500,
+                max_tokens=2000,
             )
 
             if response.choices and response.choices[0].message.content:
                 evaluation = response.choices[0].message.content.strip()
+                print(f"Received evaluation response (length: {len(evaluation)})")
                 try:
                     clean_eval = evaluation.replace('```json', '').replace('```', '').strip()
-                    return json.loads(clean_eval)
+                    parsed_eval = json.loads(clean_eval)
+                    print(f"Successfully parsed evaluation JSON with {len(parsed_eval)} sections")
+                    return parsed_eval
                 except json.JSONDecodeError as e:
                     print(f"Failed to parse evaluation as JSON: {e}")
-                    return {"error": "Invalid evaluation format"}
+                    print(f"Raw evaluation response: {evaluation[:500]}...")
+                    # Fallback: save raw text
+                    return [{"section": "Evaluation Error", "error": "JSON parsing failed", "raw_response": evaluation}]
 
             print("Groq returned empty evaluation response")
-            return {"error": "No evaluation available"}
+            return [{"section": "Evaluation Error", "error": "No evaluation available"}]
 
         except Exception as e:
             print(f"Groq API error during evaluation: {e}")
-            return {"error": f"Evaluation failed: {str(e)}"}
+            import traceback
+            traceback.print_exc()
+            return [{"section": "Evaluation Error", "error": f"Evaluation failed: {str(e)}"}]
     
     def _groq_call(self, section: str, prompt: str, user_reply: str) -> str:
         """Make a call to the Groq LLM."""
@@ -393,13 +405,45 @@ class InterviewSimulator:
     
     def _finalize_interview(self) -> None:
         """Generate and save the evaluation report."""
-        print("Interview completed. Generating evaluation report...")
-        evaluation_result = self._evaluate()
-        if "error" not in evaluation_result:
+        print("\n" + "=" * 50)
+        print("INTERVIEW COMPLETED - FINALIZING")
+        print("=" * 50)
+        print(f"Total conversation entries: {len(self.history)}")
+        print(f"Report file location: {self.report_file}")
+        
+        try:
+            evaluation_result = self._evaluate()
+            
+            # Always save the report, even if there were errors
             self._add_report(evaluation_result)
-            print("Evaluation report generated and saved successfully")
-        else:
-            print(f"Failed to generate evaluation: {evaluation_result['error']}")
+            
+            # Check if evaluation was successful
+            if isinstance(evaluation_result, list) and len(evaluation_result) > 0:
+                has_error = any(item.get('error') for item in evaluation_result if isinstance(item, dict))
+                if not has_error:
+                    print("✓ Evaluation report generated and saved successfully!")
+                    print(f"✓ Report saved to: {self.report_file}")
+                    print(f"✓ {len(evaluation_result)} sections evaluated")
+                else:
+                    print("⚠ Evaluation completed with errors - check report file")
+            else:
+                print("⚠ Evaluation result format unexpected")
+                
+        except Exception as e:
+            print(f"✗ CRITICAL ERROR during finalization: {e}")
+            import traceback
+            traceback.print_exc()
+            # Save error report
+            error_report = [{
+                "section": "Critical Error",
+                "error": str(e),
+                "timestamp": str(json.dumps(self.history[-5:] if len(self.history) >= 5 else self.history))
+            }]
+            self._add_report(error_report)
+        
+        print("=" * 50)
+        print("FINALIZATION COMPLETE")
+        print("=" * 50 + "\n")
 
 
 def run_interview():
