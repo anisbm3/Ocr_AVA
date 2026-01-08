@@ -1,0 +1,149 @@
+{
+  "awards": [
+    {
+      "awardName": "Employee of the Year",
+      "description": "Recognized for exceptional performance and contributions to key projects.",
+      "dateReceived": "2022-12-01",
+      "issuingOrganization": "Tech Innovations LLC"
+    }
+  ],
+  "skills": [
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Node.js",
+    "Python",
+    "PostgreSQL",
+    "MongoDB",
+    "AWS",
+    "Docker",
+    "Git"
+  ],
+  "projects": [
+    {
+      "link": "https://github.com/johndoe/ecommerce-platform",
+      "role": "Lead Developer",
+      "tags": [
+        "React",
+        "Node.js",
+        "Stripe API",
+        "MongoDB"
+      ],
+      "endDate": "2022-06-30",
+      "startDate": "2022-01-01",
+      "description": "Built a full-featured e-commerce platform with user authentication, payment processing, and admin dashboard.",
+      "projectName": "E-Commerce Platform"
+    },
+    {
+      "link": "https://github.com/johndoe/task-manager",
+      "role": "Full-Stack Developer",
+      "tags": [
+        "Vue.js",
+        "Express.js",
+        "Socket.io",
+        "PostgreSQL"
+      ],
+      "endDate": "2021-12-31",
+      "startDate": "2021-09-01",
+      "description": "Developed a collaborative task management application with real-time updates and team collaboration features.",
+      "projectName": "Task Management App"
+    }
+  ],
+  "education": [
+    {
+      "gpa": "3.7",
+      "major": "Computer Science",
+      "degree": "Bachelor of Science",
+      "endDate": "2019-05-31",
+      "location": "New York, NY",
+      "startDate": "2015-09-01",
+      "institution": "University of Technology"
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "proficiency": "Native"
+    },
+    {
+      "language": "Spanish",
+      "proficiency": "Intermediate"
+    }
+  ],
+  "certifications": [
+    {
+      "dateObtained": "2021-08-15",
+      "expirationDate": "2024-08-15",
+      "certificationName": "AWS Certified Developer - Associate"
+    },
+    {
+      "dateObtained": "2020-11-20",
+      "expirationDate": "2023-11-20",
+      "certificationName": "MongoDB Certified Developer"
+    }
+  ],
+  "workExperience": [
+    {
+      "tags": [
+        "React",
+        "Node.js",
+        "TypeScript",
+        "PostgreSQL",
+        "AWS"
+      ],
+      "company": "Tech Innovations LLC",
+      "endDate": null,
+      "jobTitle": "Senior Full-Stack Developer",
+      "location": "New York, NY",
+      "startDate": "2021-03-01",
+      "description": [
+        "Developed and maintained multiple React/Node.js applications serving 10k+ users",
+        "Implemented RESTful APIs and GraphQL endpoints for mobile and web clients",
+        "Led a team of 3 developers on agile development projects",
+        "Optimized database queries resulting in 40% performance improvement"
+      ]
+    },
+    {
+      "tags": [
+        "Angular",
+        "Express.js",
+        "MongoDB",
+        "PHP",
+        "Docker"
+      ],
+      "company": "Digital Solutions Inc",
+      "endDate": "2021-02-28",
+      "jobTitle": "Full-Stack Developer",
+      "location": "New York, NY",
+      "startDate": "2019-06-01",
+      "description": [
+        "Built responsive web applications using Angular and Express.js",
+        "Integrated third-party APIs and payment systems",
+        "Collaborated with design team to implement pixel-perfect UI components",
+        "Maintained and improved legacy PHP applications"
+      ]
+    }
+  ],
+  "personalInformation": {
+    "email": "user@aiiforsa.com",
+    "links": [
+      "https://linkedin.com/in/johndoe",
+      "https://github.com/johndoe",
+      "https://johndoe.dev"
+    ],
+    "phone": "+15550123",
+    "summary": "Full-stack developer with 5+ years of experience building scalable web applications using modern technologies.",
+    "fullName": "John Doe",
+    "location": "New York, NY"
+  },
+  "volunteerExperience": [
+    {
+      "role": "Coding Instructor",
+      "endDate": "",
+      "location": "New York, NY",
+      "startDate": "2020-01-01",
+      "description": "Teach programming fundamentals to underprivileged youth and organize coding workshops.",
+      "organization": "Code for Community"
+    }
+  ]
+}
