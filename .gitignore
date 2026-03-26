@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+
+# Virtual environment
+venv/
+.env
+.env.*
+
+# Streamlit
+.streamlit/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Output
+file_pages/
+
+# logs
+*.log
+
+# packages
+pip-wheel-metadata/
+*.egg-info/
+
+# Bytecode
+*.pyc
+
+# Temporary
+*.tmp
+*.temp
