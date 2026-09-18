@@ -1,4 +1,10 @@
 streamlit
+fastapi
+uvicorn
+python-multipart
+python-dotenv
+openai
+mistralai
 pdfminer==20191125
 pdf2image
 pytesseract
