@@ -1,0 +1,592 @@
+{
+  "summary": {
+    "apiUrl": "http://localhost:8000/api/ocr/parse",
+    "documents": 20,
+    "correctFields": 0,
+    "totalFields": 80,
+    "fieldLevelAccuracy": 0.0,
+    "exactDocumentMatches": 0,
+    "documentExactMatchRate": 0.0
+  },
+  "results": [
+    {
+      "file": "01_clean_reference.pdf",
+      "issues": [
+        "stamp"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "02_light_rotation.pdf",
+      "issues": [
+        "rotate_light"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "03_heavy_rotation.pdf",
+      "issues": [
+        "rotate_heavy",
+        "shadow"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "04_grayscale.pdf",
+      "issues": [
+        "grayscale"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "05_black_white_threshold.pdf",
+      "issues": [
+        "bw"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "06_low_contrast.pdf",
+      "issues": [
+        "low_contrast"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "07_high_contrast.pdf",
+      "issues": [
+        "high_contrast",
+        "grayscale"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "08_blur.pdf",
+      "issues": [
+        "blur"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "09_noise_light.pdf",
+      "issues": [
+        "noise_light"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "10_noise_heavy.pdf",
+      "issues": [
+        "noise_heavy",
+        "low_contrast"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "11_yellow_color_cast.pdf",
+      "issues": [
+        "yellow_cast",
+        "shadow"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "12_blue_color_cast.pdf",
+      "issues": [
+        "blue_cast",
+        "extra_data"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "13_dark_scan.pdf",
+      "issues": [
+        "dark",
+        "noise_light"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "14_overexposed_scan.pdf",
+      "issues": [
+        "bright",
+        "low_contrast"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "15_slight_crop.pdf",
+      "issues": [
+        "crop_light"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "16_skewed_capture.pdf",
+      "issues": [
+        "skew",
+        "shadow"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "17_skewed_grayscale.pdf",
+      "issues": [
+        "skew",
+        "grayscale",
+        "noise_light"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "18_extra_data_amounts.pdf",
+      "issues": [
+        "extra_data",
+        "stamp"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "19_blurry_color_low_quality.pdf",
+      "issues": [
+        "blur",
+        "yellow_cast",
+        "noise_light",
+        "rotate_light"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    },
+    {
+      "file": "20_max_degraded.pdf",
+      "issues": [
+        "rotate_heavy",
+        "skew",
+        "noise_heavy",
+        "shadow",
+        "low_contrast",
+        "extra_data"
+      ],
+      "expected": {
+        "dateDosRap": "2026-06-08",
+        "mntRap": 250.0,
+        "typePieceBenef": 1,
+        "noPieceBenef": "0004545Y"
+      },
+      "actual": {
+        "dateDosRap": "",
+        "mntRap": 0.0,
+        "typePieceBenef": 0,
+        "noPieceBenef": ""
+      },
+      "fieldMatches": {
+        "dateDosRap": false,
+        "mntRap": false,
+        "typePieceBenef": false,
+        "noPieceBenef": false
+      },
+      "correctFields": 0,
+      "totalFields": 4,
+      "exactMatch": false,
+      "error": ""
+    }
+  ]
+}

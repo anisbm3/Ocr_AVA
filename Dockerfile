@@ -1,10 +1,9 @@
 # Multi-stage build for optimized image
 FROM python:3.11-slim as builder
 
-# Install system dependencies for PDF processing and OCR
+# Install build tools for Python packages that may need compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment
@@ -19,11 +18,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Final stage
 FROM python:3.11-slim
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    tesseract-ocr \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -33,9 +27,6 @@ WORKDIR /app
 
 # Copy application code
 COPY . .
-
-# Create directory for ChromaDB
-RUN mkdir -p /app/chroma
 
 # Expose Gradio port
 EXPOSE 7861

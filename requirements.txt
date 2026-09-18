@@ -1,27 +1,14 @@
-﻿# Gradio Interface
 gradio
+fastapi
+uvicorn
+python-multipart
+reportlab
+pytesseract
 google-genai
 python-dotenv
-chromadb
-rfc3987
-
-# AI Interviewer
-groq
-fastrtc
-
-# AI Vision (Qwen Vision Agent)
 openai==1.54.3
 Pillow>=8.0,<11.0
-PyMuPDF==1.24.14  # For PDF processing
-pytesseract==0.3.13  # OCR fallback for images
-opencv-python>=4.5.0  # Computer vision for image processing
-numpy>=1.21.0  # Numerical computing for image arrays
-
-# Web Scraping (for extracting LinkedIn, GitHub, Portfolio data)
-beautifulsoup4==4.12.3
-aiohttp==3.9.1
-lxml==5.1.0
-
-# Utilities
+PyMuPDF==1.24.14
+opencv-python>=4.5.0
+numpy>=1.21.0
 requests==2.32.3
-python-dateutil==2.9.0.post0

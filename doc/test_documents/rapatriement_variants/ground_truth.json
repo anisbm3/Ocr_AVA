@@ -1,0 +1,301 @@
+[
+  {
+    "file": "01_clean_reference.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "stamp"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "02_light_rotation.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "rotate_light"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "03_heavy_rotation.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "rotate_heavy",
+      "shadow"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "04_grayscale.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "grayscale"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "05_black_white_threshold.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "bw"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "06_low_contrast.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "low_contrast"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "07_high_contrast.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "high_contrast",
+      "grayscale"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "08_blur.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "blur"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "09_noise_light.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "noise_light"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "10_noise_heavy.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "noise_heavy",
+      "low_contrast"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "11_yellow_color_cast.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "yellow_cast",
+      "shadow"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "12_blue_color_cast.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "blue_cast",
+      "extra_data"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "13_dark_scan.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "dark",
+      "noise_light"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "14_overexposed_scan.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "bright",
+      "low_contrast"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "15_slight_crop.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "crop_light"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "16_skewed_capture.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "skew",
+      "shadow"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "17_skewed_grayscale.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "skew",
+      "grayscale",
+      "noise_light"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "18_extra_data_amounts.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "extra_data",
+      "stamp"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "19_blurry_color_low_quality.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "blur",
+      "yellow_cast",
+      "noise_light",
+      "rotate_light"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  },
+  {
+    "file": "20_max_degraded.pdf",
+    "source": "Rapatriment_AVA.pdf",
+    "expected": {
+      "dateDosRap": "2026-06-08",
+      "mntRap": 250.0,
+      "typePieceBenef": 1,
+      "noPieceBenef": "0004545Y"
+    },
+    "issues": [
+      "rotate_heavy",
+      "skew",
+      "noise_heavy",
+      "shadow",
+      "low_contrast",
+      "extra_data"
+    ],
+    "description": "Synthetic degraded variant for OCR/LLM accuracy testing."
+  }
+]

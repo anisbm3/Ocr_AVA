@@ -1,6 +1,6 @@
 """
-Universal LLM Client for LM Studio (Qwen2.5-VL-7B)
-General-purpose text generation for any task: CV parsing, job matching, analysis, etc.
+LLM Client for LM Studio (Qwen2.5-VL-7B)
+Used by the local CV parser to turn extracted resume text into structured JSON.
 """
 import logging
 import json
@@ -11,11 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class LLMClient:
-    """
-    Universal LLM Client for LM Studio
-    Works with any local model (optimized for Qwen2.5-VL-7B)
-    Use for: CV parsing, job matching, skill analysis, text generation, etc.
-    """
+    """LM Studio client for CV parsing."""
 
     def __init__(self, lm_studio_host: str = "http://localhost:1234", preferred_model: str = "qwen2.5-vl-7b", timeout: int = None):
         """
@@ -134,47 +130,19 @@ class LLMClient:
         """Auto-generate appropriate system prompt based on task"""
         prompt_lower = prompt.lower()
         
-        # CV/Resume parsing
         if "resume" in prompt_lower or "cv" in prompt_lower or "json" in prompt_lower:
             return "You are a professional resume parser. Extract information accurately and return only valid JSON."
-        
-        # Job matching / skill analysis
-        elif "skill" in prompt_lower or "match" in prompt_lower or "recruiter" in prompt_lower:
-            return "You are an expert technical recruiter. Analyze skills and experience objectively."
-        
-        # Video analysis
-        elif "video" in prompt_lower or "frame" in prompt_lower:
-            return "You are a video content analyst. Describe what you see clearly and professionally."
-        
-        # General assistant
-        else:
-            return "You are a helpful AI assistant. Provide accurate, concise, and professional responses."
+
+        return "You are a helpful AI assistant. Provide accurate, concise, and professional responses."
 
     def _mock_response(self, prompt: str) -> str:
         """Fallback response when LM Studio unavailable"""
         logger.warning("Using mock response (LM Studio unavailable)")
         
-        if "matching score" in prompt.lower() or "analyze this cv" in prompt.lower():
-            return json.dumps({
-                "score": 70.0,
-                "strengths": ["Relevant experience", "Good technical skills", "Clear background"],
-                "weaknesses": ["More specific examples needed", "Could highlight achievements better"],
-                "summary": "Candidate shows potential for the role with relevant background and skills."
-            })
-        elif "technical recruiter" in prompt.lower() or "skill matches" in prompt.lower():
-            # Skill analysis prompt - return valid JSON
-            return json.dumps({
-                "required_skills": ["Python", "JavaScript", "React", "Node.js", "SQL"],
-                "matched_skills": ["Python", "JavaScript"],
-                "missing_skills": ["React", "Node.js", "SQL"],
-                "skills_score": 40.0,
-                "analysis": "Candidate has basic programming skills but lacks modern web development experience."
-            })
-        elif "professional cv/resume parser" in prompt.lower() or \
+        if "professional cv/resume parser" in prompt.lower() or \
              ("extract and structure" in prompt.lower() and "resume" in prompt.lower()) or \
              ("you will receive a resume" in prompt.lower() and "json" in prompt.lower()) or \
              ("convert it into a single json" in prompt.lower() and "resume" in prompt.lower()):
-            # CV parsing prompt - return invalid JSON to trigger regex fallback
             return "INVALID_JSON_RESPONSE_TO_TRIGGER_FALLBACK"
         
         return json.dumps({"response": "LLM response generated successfully."})

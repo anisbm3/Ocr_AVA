@@ -18,11 +18,8 @@ services:
       - DEBUG=${DEBUG:-false}
       - CV_TEMPLATE_PATH=${CV_TEMPLATE_PATH:-./cv_template_camelCase.json}
     volumes:
-      # Mount CV template and data
+      # Mount CV template
       - ./cv_template_camelCase.json:/app/cv_template_camelCase.json:ro
-      - ./chroma:/app/chroma
-      # Optional: Mount local job descriptions
-      - ./job_descriptions.json:/app/job_descriptions.json:ro
     extra_hosts:
       # Allow container to reach Windows host for LM Studio
       - "host.docker.internal:host-gateway"
@@ -45,6 +42,3 @@ services:
 networks:
   cv-parser-network:
     driver: bridge
-
-volumes:
-  chroma-data:
